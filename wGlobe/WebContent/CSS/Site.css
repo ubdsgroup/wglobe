@@ -1,0 +1,12 @@
+body{
+	background-color:black;
+}
+
+#heading > h1{
+	text-align:center;
+	color:white;
+}
+
+.paddingtop50{
+	padding-top:50px;
+}
