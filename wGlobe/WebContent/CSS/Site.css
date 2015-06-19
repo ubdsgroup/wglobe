@@ -1,5 +1,18 @@
 body{
 	background-color:black;
+	color:white;
+}
+
+.error{
+	color:red;
+}
+
+.blacktext{
+	color:black;
+}
+
+.redtext{
+	color:red;
 }
 
 #heading > h1{
@@ -7,6 +20,167 @@ body{
 	color:white;
 }
 
+.margintop10{
+	margin-top:10px;
+}
+
+.margintop30{
+	margin-top:30px;
+}
+
+.margintop50{
+	margin-top:50px;
+}
+
 .paddingtop50{
 	padding-top:50px;
+}
+
+#otherserver > .col-md-4{
+	padding-right: 0px;
+}
+
+div#data.well{
+	padding: 15px !important;
+	min-height: 510px !important;
+}
+
+#or{
+	text-align:center;
+	font-style: italic;
+}
+
+#otherserver{
+	display:none;
+}
+
+/***** Tree ******/
+.tree, .tree ul {
+    margin:0;
+    padding:0;
+    list-style:none
+}
+.tree ul {
+    margin-left:1em;
+    position:relative
+}
+.tree ul ul {
+    margin-left:.5em
+}
+.tree ul:before {
+    content:"";
+    display:block;
+    width:0;
+    position:absolute;
+    top:0;
+    bottom:0;
+    left:0;
+    border-left:1px solid
+}
+.tree li {
+    margin:0;
+    padding:0 1em;
+    line-height:2em;
+    color:#369;
+    font-weight:700;
+    position:relative
+}
+.tree ul li:before {
+    content:"";
+    display:block;
+    width:10px;
+    height:0;
+    border-top:1px solid;
+    margin-top:-1px;
+    position:absolute;
+    top:1em;
+    left:0
+}
+.tree ul li:last-child:before {
+    background:#fff;
+    height:auto;
+    top:1em;
+    bottom:0
+}
+
+.indicator {
+    margin-right:5px;
+}
+.tree li a {
+    text-decoration: none;
+    color:#369;
+    cursor:pointer;
+}
+.tree li button, .tree li button:active, .tree li button:focus {
+    text-decoration: none;
+    color:#369;
+    border:none;
+    background:transparent;
+    margin:0px 0px 0px 0px;
+    padding:0px 0px 0px 0px;
+    outline: 0;
+}
+
+
+/***Loading ****/
+/* Loading Circle */
+.ball {
+	background-color: rgba(0,0,0,0);
+	border:5px solid #369;
+	opacity:.9;
+	border-top:5px solid rgba(0,0,0,0);
+	border-left:5px solid rgba(0,0,0,0);
+	border-radius:50px;
+	box-shadow: 0 0 35px #6D88A3;
+	width:50px;
+	height:50px;
+	margin:0 auto;
+	-moz-animation:spin .5s infinite linear;
+	-webkit-animation:spin .5s infinite linear;
+	margin-top:180px;
+	display:none;
+}
+
+.ball1 {
+	background-color: rgba(0,0,0,0);
+	border:5px solid #369;
+	opacity:.9;
+	border-top:5px solid rgba(0,0,0,0);
+	border-left:5px solid rgba(0,0,0,0);
+	border-radius:50px;
+	box-shadow: 0 0 15px grey; 
+	width:30px;
+	height:30px;
+	margin:0 auto;
+	position:relative;
+	top:-40px;
+	-moz-animation:spinoff .5s infinite linear;
+	-webkit-animation:spinoff .5s infinite linear;
+	display:none;
+	
+	content: "hi";
+}
+
+@-moz-keyframes spin {
+	0% { -moz-transform:rotate(0deg); }
+	100% { -moz-transform:rotate(360deg); }
+}
+@-moz-keyframes spinoff {
+	0% { -moz-transform:rotate(0deg); }
+	100% { -moz-transform:rotate(-360deg); }
+}
+@-webkit-keyframes spin {
+	0% { -webkit-transform:rotate(0deg); }
+	100% { -webkit-transform:rotate(360deg); }
+}
+@-webkit-keyframes spinoff {
+	0% { -webkit-transform:rotate(0deg); }
+	100% { -webkit-transform:rotate(-360deg); }
+}
+
+/* STOP ANIMATION */
+
+.stop {
+	-webkit-animation-play-state:paused;
+	-moz-animation-play-state:paused;
 }
