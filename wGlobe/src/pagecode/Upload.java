@@ -63,9 +63,18 @@ public class Upload extends HttpServlet {
 			ServletFileUpload upload = new ServletFileUpload(factory);
 			try {
 				FileItemIterator iterator = upload.getItemIterator(request);
-
+//				
+				
 				FileItemStream item = iterator.next();
 				String name = item.getName();
+				String extension = name.substring(name.lastIndexOf(".")+1, name.length());
+				if(!extension.equals("nc") && !extension.equals("grb2")){
+					htmlstr = "<b><p class=\"redtext\">Could not read uploaded file. Please try again with .nc / .grb2 file.<p></b>";
+					response.setContentType("text/plain");
+					response.setCharacterEncoding("UTF-8");
+					response.getWriter().write(htmlstr);
+					return;
+				}
 				InputStream is = item.openStream();
 				S3Uploader aws = new S3Uploader();
 				url = aws.putObject(is, name);
@@ -78,7 +87,6 @@ public class Upload extends HttpServlet {
 
 			}
 
-			response.getWriter().write(htmlstr);
 
 		} else {
 			htmlstr = "No file found. please try again.";

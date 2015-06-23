@@ -71,18 +71,6 @@ public class Index extends HttpServlet {
 		else{
 			
 		}
-//		System.out.println(selectedServer.substring(selectedServer.lastIndexOf(".")+1, selectedServer.length()));
-		
-//		uploadxml(url);
-		
-//		String htmlstr = "<b>" + url + "</b>";
-		
-//		request.setAttribute("sum", url);
-//		//out.println(test);
-		
-//		response.setContentType("text/plain");
-//		response.setCharacterEncoding("UTF-8");
-//		response.getWriter().write(htmlstr);
 	}
 	
 	public void uploadxml(String url){

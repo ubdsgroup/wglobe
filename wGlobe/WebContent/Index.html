@@ -65,8 +65,7 @@
 							</div>
 							<div class="col-md-11">
 								<input id="uploadbtn" name="uploadbtn" type="submit"
-									class="blacktext pull-right" value="Upload"
-									onclick="submitform()">
+									class="blacktext pull-right" value="Upload">
 							</div>
 						</form>
 					</div>
@@ -97,6 +96,80 @@
 							<canvas id="canvasOne" width="500" height="500">
 			        				Your browser does not support HTML5 Canvas.
 			   					</canvas>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+		<div class="row margintop30">
+			<div class="col-md-6">
+				<div class="col-md-12">
+					<div class="col-md-12">
+						<div id="time" class="col-md-12 well" style="display: none">
+							<input type="hidden" name="variable">
+							<fieldset class="scheduler-border">
+								<legend class="scheduler-border">Time</legend>
+								<div class="col-md-6">
+									<div class="control-group">
+										<label class="control-label input-label" for="startTime">Start
+											:</label>
+										<div class="controls">
+											<select id="from"></select>
+										</div>
+									</div>
+								</div>
+								<div class="col-md-6">
+									<div class="control-group">
+										<label class="control-label input-label" for="startTime">End
+											:</label>
+										<div class="controls">
+											<select id="to"></select>
+										</div>
+									</div>
+								</div>
+							</fieldset>
+
+						</div>
+					</div>
+				</div>
+			</div>
+			<div class="col-md-6">
+				<div class="col-md-12">
+					<div class="col-md-12">
+						<div id="time" class="col-md-12 well" style="display: none">
+							<fieldset class="scheduler-border">
+								<legend class="scheduler-border">Bounding Box</legend>
+
+								<div id="bounding" class="control-group">
+									<input type="hidden" name="variable">
+									<div class="col-md-6">
+										<div class="control-group">
+											<label class="control-label input-label" for="startTime">Lower
+												Left :</label>
+											<div class="controls bootstrap-timepicker">
+												<input type="text" class="" type="text"
+													id="llLat" name="llLat" placeholder="Latitude" />
+												<input type="text" class="datetime" type="text"
+													id="llLong" name="llLong" placeholder="Longitude" />
+											</div>
+										</div>
+									</div>
+									<div class="col-md-6">
+										<div class="control-group">
+											<label class="control-label input-label" for="startTime">Upper
+												Right :</label>
+											<div class="controls bootstrap-timepicker">
+												<input type="text" class="datetime" type="text"
+													id="urlat" name="urlat" placeholder="Latitude" />
+												<input type="text" class="datetime" type="text"
+													id="urlong" name="urlong" placeholder="Longitude" />
+											</div>
+										</div>
+									</div>
+
+								</div>
+							</fieldset>
+
 						</div>
 					</div>
 				</div>
@@ -254,8 +327,21 @@
 
 		// post to servlet
 		function getMeasure(e) {
-			var t = $(e).text();
-			alert(t);
+			var variable = $(e).text();
+			$.ajax({
+				url : 'Variable',
+				type : 'POST',
+				data : {
+					variable : variable
+				},
+				success : function(data) {
+					$("#data").css("display", "block");
+					$('#data').html(data);
+					$('#tree1').treed();
+					$(".ball").css("display", "none");
+					$(".ball1").css("display", "none");
+				}
+			});
 		}
 
 		function toggleLoad() {
@@ -264,94 +350,91 @@
 			$(".ball").css("display", "block");
 			$(".ball1").css("display", "block");
 		}
-		
-		
-		
-		function getDoc(frame) {
-		     var doc = null;
-		 
-		     // IE8 cascading access check
-		     try {
-		         if (frame.contentWindow) {
-		             doc = frame.contentWindow.document;
-		         }
-		     } catch(err) {
-		     }
-		 
-		     if (doc) { // successful getting content
-		         return doc;
-		     }
-		 
-		     try { // simply checking may throw in ie8 under ssl or mismatched protocol
-		         doc = frame.contentDocument ? frame.contentDocument : frame.document;
-		     } catch(err) {
-		         // last attempt
-		         doc = frame.document;
-		     }
-		     return doc;
-		 }
-		
-		$("#uploadform").submit(function(e)
-		{
-			$("#data").html("");
 
-			$(".ball").css("display", "block");
-			$(".ball1").css("display", "block");
-		    var formObj = $(this);
-		    var formURL = formObj.attr("action");
-		 
-		    if(window.FormData !== undefined)  // for HTML5 browsers
-		    {
-		 
-		        var formData = new FormData(this);
-		        $.ajax({
-		            url: formURL,
-		            type: 'POST',
-		            data:  formData,
-		            mimeType:"multipart/form-data",
-		            contentType: false,
-		            cache: true,
-		            processData:false,
-		            success: function(data)
-		            {
-		            	$("#data").css("display", "block");
-						$('#data').html(data);
-						$('#tree1').treed();
-						$(".ball").css("display", "none");
-						$(".ball1").css("display", "none");
-		            }          
-		       });
-		        e.preventDefault();
-		        e.unbind();
-		   }
-		   else  //for olden browsers
-		    {
-		        //generate a random id
-		        var  iframeId = 'unique' + (new Date().getTime());
-		 
-		        //create an empty iframe
-		        var iframe = $('<iframe src="javascript:false;" name="'+iframeId+'" />');
-		 
-		        //hide it
-		        iframe.hide();
-		 
-		        //set form target to iframe
-		        formObj.attr('target',iframeId);
-		 
-		        //Add iframe to body
-		        iframe.appendTo('body');
-		        iframe.load(function(e)
-		        {
-		            var doc = getDoc(iframe[0]);
-		            var docRoot = doc.body ? doc.body : doc.documentElement;
-		            var data = docRoot.innerHTML;
-		            //data is returned from server.
-		 
-		        });
-		 
-		    }     
-		});
-		/* $("#uploadform").submit(); */
+		function getDoc(frame) {
+			var doc = null;
+
+			// IE8 cascading access check
+			try {
+				if (frame.contentWindow) {
+					doc = frame.contentWindow.document;
+				}
+			} catch (err) {
+			}
+
+			if (doc) { // successful getting content
+				return doc;
+			}
+
+			try { // simply checking may throw in ie8 under ssl or mismatched protocol
+				doc = frame.contentDocument ? frame.contentDocument
+						: frame.document;
+			} catch (err) {
+				// last attempt
+				doc = frame.document;
+			}
+			return doc;
+		}
+
+		$("#uploadform")
+				.submit(
+						function(e) {
+							$("#data").html("");
+
+							$(".ball").css("display", "block");
+							$(".ball1").css("display", "block");
+							var formObj = $(this);
+							var formURL = formObj.attr("action");
+
+							if (window.FormData !== undefined) // for HTML5 browsers
+							{
+
+								var formData = new FormData(this);
+								$.ajax({
+									url : formURL,
+									type : 'POST',
+									data : formData,
+									mimeType : "multipart/form-data",
+									contentType : false,
+									cache : true,
+									processData : false,
+									success : function(data) {
+										$("#data").css("display", "block");
+										$('#data').html(data);
+										$('#tree1').treed();
+										$(".ball").css("display", "none");
+										$(".ball1").css("display", "none");
+									}
+								});
+								e.preventDefault();
+							} else //for olden browsers
+							{
+								//generate a random id
+								var iframeId = 'unique'
+										+ (new Date().getTime());
+
+								//create an empty iframe
+								var iframe = $('<iframe src="javascript:false;" name="'+iframeId+'" />');
+
+								//hide it
+								iframe.hide();
+
+								//set form target to iframe
+								formObj.attr('target', iframeId);
+
+								//Add iframe to body
+								iframe.appendTo('body');
+								iframe.load(function(e) {
+									var doc = getDoc(iframe[0]);
+									var docRoot = doc.body ? doc.body
+											: doc.documentElement;
+									var data = docRoot.innerHTML;
+									//data is returned from server.
+
+								});
+
+							}
+						});
 	</script>
 </body>
 </html>
