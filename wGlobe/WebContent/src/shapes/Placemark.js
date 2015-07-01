@@ -4,7 +4,7 @@
  */
 /**
  * @exports Placemark
- * @version $Id: Placemark.js 3109 2015-05-26 19:13:06Z tgaskins $
+ * @version $Id: Placemark.js 3291 2015-06-30 16:52:12Z tgaskins $
  */
 define([
         '../error/ArgumentError',
@@ -46,11 +46,22 @@ define([
          * Placemarks may be drawn with either an image or as single-color square with a specified size. When the
          * placemark attributes indicate a valid image, the placemark's image is drawn as a rectangle in the
          * image's original dimensions, scaled by the image scale attribute. Otherwise, the placemark is drawn as a
-         * square with width and height equal to the value of the image scale attribute, in pixels.
+         * square with width and height equal to the value of the image scale attribute, in pixels, and color equal
+         * to the image color attribute.
+         * <p>
+         * By default, placemarks participate in decluttering with a [declutterGroupID]{@link Placemark#declutterGroup}
+         * of 2. Only placemark labels are decluttered relative to other placemark labels. The placemarks themselves
+         * are optionally scaled with eye distance to achieve decluttering of the placemark as a whole.
+         * See [eyeDistanceScaling]{@link Placemark#eyeDistanceScaling}.
          * @param {Position} position The placemark's geographic position.
+         * @param {Boolean} eyeDistanceScaling Indicates whether the size of this placemark scales with eye distance.
+         * See [eyeDistanceScalingThreshold]{@link Placemark#eyeDistanceScalingThreshold} and
+         * [eyeDistanceScalingLabelThreshold]{@link Placemark#eyeDistanceScalingLabelThreshold}.
+         * @param {PlacemarkAttributes} attributes The attributes to associate with this placemark. May be null,
+         * in which case default attributes are associated.
          * @throws {ArgumentError} If the specified position is null or undefined.
          */
-        var Placemark = function (position) {
+        var Placemark = function (position, eyeDistanceScaling, attributes) {
             if (!position) {
                 throw new ArgumentError(
                     Logger.logMessage(Logger.LEVEL_SEVERE, "Placemark", "constructor", "missingPosition"));
@@ -64,7 +75,7 @@ define([
              * @type {PlacemarkAttributes}
              * @default see [PlacemarkAttributes]{@link PlacemarkAttributes}
              */
-            this.attributes = new PlacemarkAttributes(null);
+            this.attributes = attributes ? attributes : new PlacemarkAttributes(null);
 
             /**
              * The attributes used when this placemark's highlighted flag is true. If null and the
@@ -87,6 +98,31 @@ define([
              * @type {Position}
              */
             this.position = position;
+
+            /**
+             * Indicates whether this placemark's size is reduced at higher eye distances. If true, this placemark's
+             * size is scaled inversely proportional to the eye distance if the eye distance is greater than the
+             * value of the [eyeDistanceScalingThreshold]{@link Placemark#eyeDistanceScalingThreshold} property.
+             * When the eye distance is below the threshold, this placemark is scaled only according to the
+             * [imageScale]{@link PlacemarkAttributes#imageScale}.
+             * @type {Boolean}
+             */
+            this.eyeDistanceScaling = eyeDistanceScaling;
+
+            /**
+             * The eye distance above which to reduce the size of this placemark, in meters. If
+             * [eyeDistanceScaling]{@link Placemark#eyeDistanceScaling} is true, this placemark's image, label and leader
+             * line sizes are reduced as the eye distance increases beyond this threshold.
+             * @type {Number}
+             * @default 1e6 (meters)
+             */
+            this.eyeDistanceScalingThreshold = 1e6;
+
+            /**
+             * The eye altitude above which this placemark's label is not displayed.
+             * @type {number}
+             */
+            this.eyeDistanceScalingLabelThreshold = 1.5 * this.eyeDistanceScalingThreshold;
 
             /**
              * This placemark's textual label. If null, no label is drawn.
@@ -127,6 +163,76 @@ define([
              * @type {Boolean}
              */
             this.updateImage = true;
+
+            /**
+             * Indicates the group ID of the declutter group to include this Text shape. If non-zero, this shape
+             * is decluttered relative to all other shapes within its group.
+             * @type {Number}
+             * @default 2
+             */
+            this.declutterGroup = 2;
+
+            /**
+             * This shape's target visibility, a value between 0 and 1. During ordered rendering this shape modifies its
+             * [current visibility]{@link Text#currentVisibility} towards its target visibility at the rate
+             * specified by the draw context's [fade time]{@link DrawContext#fadeTime} property. The target
+             * visibility and current visibility are used to control the fading in and out of this shape.
+             * @type {Number}
+             * @default 1
+             */
+            this.targetVisibility = 1;
+
+            /**
+             * This shape's current visibility, a value between 0 and 1. This property scales the shape's effective
+             * opacity. It is incremented or decremented each frame according to the draw context's
+             * [fade time]{@link DrawContext#fadeTime} property in order to achieve this shape's current
+             * [target visibility]{@link Text#targetVisibility}. This current visibility and target visibility are
+             * used to control the fading in and out of this shape.
+             * @type {Number}
+             * @default 1
+             * @readonly
+             */
+            this.currentVisibility = 1;
+
+            /**
+             * The amount of rotation to apply to the image, measured in degrees clockwise and relative to this
+             * placemark's [imageRotationReference]{@link Placemark#imageRotationReference}.
+             * @type {Number}
+             * @default 0
+             */
+            this.imageRotation = 0;
+
+            /**
+             * The amount of tilt to apply to the image, measured in degrees away from the eye point and relative
+             * to this placemark's [imageTiltReference]{@link Placemark#imageTiltReference}. While any positive or
+             * negative number may be specified, values outside the range [0. 90] cause some or all of the image to
+             * be clipped.
+             * @type {Number}
+             * @default 0
+             */
+            this.imageTilt = 0;
+
+            /**
+             * Indicates whether to apply this placemark's image rotation relative to the screen or the globe.
+             * If WorldWind.RELATIVE_TO_SCREEN, this placemark's image is rotated in the plane of the screen and
+             * its orientation relative to the globe changes as the view changes.
+             * If WorldWind.RELATIVE_TO_GLOBE, this placemark's image is rotated in a plane tangent to the globe
+             * at this placemark's position and retains its orientation relative to the globe.
+             * @type {String}
+             * @default WorldWind.RELATIVE_TO_SCREEN
+             */
+            this.imageRotationReference = WorldWind.RELATIVE_TO_SCREEN;
+
+            /**
+             * Indicates whether to apply this placemark's image tilt relative to the screen or the globe.
+             * If WorldWind.RELATIVE_TO_SCREEN, this placemark's image is tilted inwards (for positive tilts)
+             * relative to the plane of the screen, and its orientation relative to the globe changes as the view
+             * changes. If WorldWind.RELATIVE_TO_GLOBE, this placemark's image is tilted towards the globe's surface,
+             * and retains its orientation relative to the surface.
+             * @type {string}
+             * @default WorldWind.RELATIVE_TO_SCREEN
+             */
+            this.imageTiltReference = WorldWind.RELATIVE_TO_SCREEN;
 
             // Internal use only. Intentionally not documented.
             this.activeAttributes = null;
@@ -169,6 +275,20 @@ define([
 
         Placemark.prototype = Object.create(Renderable.prototype);
 
+        Object.defineProperties(Placemark.prototype, {
+            /**
+             * Indicates the screen coordinate bounds of this shape during ordered rendering.
+             * @type {Rectangle}
+             * @readonly
+             * @memberof Placemark.prototype
+             */
+            screenBounds: {
+                get: function () {
+                    return this.labelBounds;
+                }
+            }
+        });
+
         /**
          * Copies the contents of a specified placemark to this placemark.
          * @param {Placemark} that The placemark to copy.
@@ -184,6 +304,12 @@ define([
             this.pickDelegate = that.pickDelegate;
             this.alwaysOnTop = that.alwaysOnTop;
             this.depthOffset = that.depthOffset;
+            this.targetVisibility = that.targetVisibility;
+            this.currentVisibility = that.currentVisibility;
+            this.imageRotation = that.imageRotation;
+            this.imageTilt = that.imageTilt;
+            this.imageRotationReference = that.imageRotationReference;
+            this.imageTiltReference = that.imageTiltReference;
 
             return this;
         };
@@ -209,6 +335,10 @@ define([
          */
         Placemark.prototype.render = function (dc) {
             if (!this.enabled) {
+                return;
+            }
+
+            if (!dc.accumulateOrderedRenderables) {
                 return;
             }
 
@@ -303,6 +433,9 @@ define([
                 return null;
             }
 
+            var visibilityScale = this.eyeDistanceScaling ?
+                Math.max(0.0, Math.min(1, this.eyeDistanceScalingThreshold / this.eyeDistance)) : 1;
+
             // Compute the placemark's transform matrix and texture coordinate matrix according to its screen point, image size,
             // image offset and image scale. The image offset is defined with its origin at the image's bottom-left corner and
             // axes that extend up and to the right from the origin point. When the placemark has no active texture the image
@@ -310,7 +443,7 @@ define([
             if (this.activeTexture) {
                 w = this.activeTexture.originalImageWidth;
                 h = this.activeTexture.originalImageHeight;
-                s = this.activeAttributes.imageScale;
+                s = this.activeAttributes.imageScale * visibilityScale;
                 offset = this.activeAttributes.imageOffset.offsetForSize(w, h);
 
                 this.imageTransform.setTranslation(
@@ -320,7 +453,7 @@ define([
 
                 this.imageTransform.setScale(w * s, h * s, 1);
             } else {
-                s = this.activeAttributes.imageScale;
+                s = this.activeAttributes.imageScale * visibilityScale;
                 offset = this.activeAttributes.imageOffset.offsetForSize(s, s);
 
                 this.imageTransform.setTranslation(
@@ -348,7 +481,7 @@ define([
 
                 w = this.labelTexture.imageWidth;
                 h = this.labelTexture.imageHeight;
-                s = this.activeAttributes.labelAttributes.scale;
+                s = this.activeAttributes.labelAttributes.scale * visibilityScale;
                 offset = this.activeAttributes.labelAttributes.offset.offsetForSize(w, h);
 
                 this.labelTransform.setTranslation(
@@ -437,7 +570,7 @@ define([
             var gl = dc.currentGlContext,
                 program;
 
-            dc.findAndBindProgram(gl, BasicTextureProgram);
+            dc.findAndBindProgram(BasicTextureProgram);
 
             // Configure GL to use the draw context's unit quad VBOs for both model coordinates and texture coordinates.
             // Most browsers can share the same buffer for vertex and texture coordinates, but Internet Explorer requires
@@ -452,10 +585,6 @@ define([
             // Tell the program which texture unit to use.
             program.loadTextureUnit(gl, WebGLRenderingContext.TEXTURE0);
             program.loadModulateColor(gl, dc.pickingMode);
-            program.loadOpacity(gl, !dc.pickingMode ? this.layer.opacity : 1);
-
-            // The currentTexture field is used to avoid re-specifying textures unnecessarily. Clear it to start.
-            Placemark.currentTexture = null;
         };
 
         // Internal. Intentionally not documented.
@@ -468,12 +597,9 @@ define([
             gl.disableVertexAttribArray(program.vertexTexCoordLocation);
 
             // Clear GL bindings.
-            dc.bindProgram(gl, null);
+            dc.bindProgram(null);
             gl.bindBuffer(WebGLRenderingContext.ARRAY_BUFFER, null);
             gl.bindTexture(WebGLRenderingContext.TEXTURE_2D, null);
-
-            // Avoid keeping a dangling reference to the current texture.
-            Placemark.currentTexture = null;
         };
 
         // Internal. Intentionally not documented.
@@ -486,6 +612,27 @@ define([
             if (dc.pickingMode) {
                 this.pickColor = dc.uniquePickColor();
             }
+
+            if (this.eyeDistanceScaling && (this.eyeDistance > this.eyeDistanceScalingLabelThreshold)) {
+                // Target visibility is set to 0 to cause the label to be faded in or out. Nothing else
+                // here uses target visibility.
+                this.targetVisibility = 0;
+            }
+
+            // Compute the effective visibility. Use the current value if picking.
+            if (!dc.pickingMode && this.mustDrawLabel()) {
+                if (this.currentVisibility != this.targetVisibility) {
+                    var visibilityDelta = (dc.timestamp - dc.previousTimestamp) / dc.fadeTime;
+                    if (this.currentVisibility < this.targetVisibility) {
+                        this.currentVisibility = Math.min(1, this.currentVisibility + visibilityDelta);
+                    } else {
+                        this.currentVisibility = Math.max(0, this.currentVisibility - visibilityDelta);
+                    }
+                    dc.redrawRequested = true;
+                }
+            }
+
+            program.loadOpacity(gl, dc.pickingMode ? 1 : this.layer.opacity);
 
             // Draw the leader line first so that the image and label have visual priority.
             if (this.mustDrawLeaderLine(dc)) {
@@ -539,7 +686,8 @@ define([
             }
 
             // Suppress frame buffer writes for the placemark image and its label.
-            gl.depthMask(false);
+            // tag, 6/17/15: It's not clear why this call was here. It was carried over from WWJ.
+            //gl.depthMask(false);
 
             gl.bindBuffer(WebGLRenderingContext.ARRAY_BUFFER, dc.unitQuadBuffer3());
             gl.vertexAttribPointer(program.vertexPointLocation, 3, WebGLRenderingContext.FLOAT, false, 0, 0);
@@ -547,6 +695,19 @@ define([
             // Compute and specify the MVP matrix.
             Placemark.matrix.copy(dc.screenProjection);
             Placemark.matrix.multiplyMatrix(this.imageTransform);
+
+            var actualRotation = this.imageRotationReference === WorldWind.RELATIVE_TO_GLOBE ?
+                dc.navigatorState.heading - this.imageRotation : -this.imageRotation;
+            Placemark.matrix.multiplyByTranslation(0.5, 0.5, 0);
+            Placemark.matrix.multiplyByRotation(0, 0, 1, actualRotation);
+            Placemark.matrix.multiplyByTranslation(-0.5, -0.5, 0);
+
+            // Perform the tilt before applying the rotation so that the image tilts back from its base into
+            // the view volume.
+            var actualTilt = this.imageTiltReference === WorldWind.RELATIVE_TO_GLOBE ?
+            dc.navigatorState.tilt + this.imageTilt : this.imageTilt;
+            Placemark.matrix.multiplyByRotation(-1, 0, 0, actualTilt);
+
             program.loadModelviewProjection(gl, Placemark.matrix);
 
             // Enable texture for both normal display and for picking. If picking is enabled in the shader (set in
@@ -566,16 +727,19 @@ define([
             }
             program.loadTextureMatrix(gl, this.texCoordMatrix);
 
-            if (this.activeTexture && this.activeTexture != Placemark.currentTexture) { // avoid unnecessary texture state changes
+            if (this.activeTexture) {
                 textureBound = this.activeTexture.bind(dc); // returns false if active texture is null or cannot be bound
                 program.loadTextureEnabled(gl, textureBound);
-                Placemark.currentTexture = this.activeTexture;
+            } else {
+                program.loadTextureEnabled(gl, false);
             }
 
             // Draw the placemark's image quad.
             gl.drawArrays(WebGLRenderingContext.TRIANGLE_STRIP, 0, 4);
 
-            if (this.mustDrawLabel()) {
+            if (this.mustDrawLabel() && this.currentVisibility > 0) {
+                program.loadOpacity(gl, dc.pickingMode ? 1 : this.layer.opacity * this.currentVisibility);
+
                 Placemark.matrix.copy(dc.screenProjection);
                 Placemark.matrix.multiplyMatrix(this.labelTransform);
                 program.loadModelviewProjection(gl, Placemark.matrix);
@@ -589,16 +753,17 @@ define([
 
                     textureBound = this.labelTexture.bind(dc);
                     program.loadTextureEnabled(gl, textureBound);
-                    Placemark.currentTexture = this.labelTexture;
                 } else {
                     program.loadTextureEnabled(gl, false);
                     program.loadColor(gl, this.pickColor);
                 }
 
-                if (this.activeAttributes.labelAttributes.depthTest && !depthTest) {
-                    depthTest = true;
-                    gl.enable(WebGLRenderingContext.DEPTH_TEST);
-                } else if (depthTest) {
+                if (this.activeAttributes.labelAttributes.depthTest) {
+                    if (!depthTest) {
+                        depthTest = true;
+                        gl.enable(WebGLRenderingContext.DEPTH_TEST);
+                    }
+                } else {
                     depthTest = false;
                     gl.disable(WebGLRenderingContext.DEPTH_TEST);
                 }
@@ -610,7 +775,8 @@ define([
                 gl.enable(WebGLRenderingContext.DEPTH_TEST);
             }
 
-            gl.depthMask(true);
+            // tag, 6/17/15: See note on depthMask above in this function.
+            //gl.depthMask(true);
         };
 
         // Internal. Intentionally not documented.

@@ -4,7 +4,7 @@
  */
 /**
  * @exports HighlightController
- * @version $Id: HighlightController.js 3024 2015-04-15 20:53:54Z tgaskins $
+ * @version $Id: HighlightController.js 3260 2015-06-25 01:06:21Z tgaskins $
  */
 define([
         '../error/ArgumentError',
@@ -61,10 +61,12 @@ define([
                 // Highlight the items picked by simply setting their highlight flag to true.
                 if (pickList.objects.length > 0) {
                     for (var p = 0; p < pickList.objects.length; p++) {
-                        pickList.objects[p].userObject.highlighted = true;
+                        if (!pickList.objects[p].isTerrain) {
+                            pickList.objects[p].userObject.highlighted = true;
 
-                        // Keep track of highlighted items in order to de-highlight them later.
-                        highlightedItems.push(pickList.objects[p].userObject);
+                            // Keep track of highlighted items in order to de-highlight them later.
+                            highlightedItems.push(pickList.objects[p].userObject);
+                        }
                     }
                 }
 
@@ -78,8 +80,7 @@ define([
             this.worldWindow.addEventListener("mousemove", handlePick);
 
             // Listen for taps on mobile devices and highlight the placemarks that the user taps.
-            var tapRecognizer = new WorldWind.TapRecognizer(this.worldWindow);
-            tapRecognizer.addGestureListener(handlePick);
+            var tapRecognizer = new WorldWind.TapRecognizer(this.worldWindow, handlePick);
         };
 
         return HighlightController;

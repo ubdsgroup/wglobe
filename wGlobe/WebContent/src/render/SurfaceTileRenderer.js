@@ -4,7 +4,7 @@
  */
 /**
  * @exports SurfaceTileRenderer
- * @version $Id: SurfaceTileRenderer.js 2941 2015-03-30 21:11:43Z tgaskins $
+ * @version $Id: SurfaceTileRenderer.js 3217 2015-06-19 18:58:03Z tgaskins $
  */
 define([
         '../error/ArgumentError',
@@ -67,6 +67,8 @@ define([
 
             this.isSurfaceShapeTileRendering = surfaceTiles[0] instanceof SurfaceShapeTile;
 
+            opacity *= dc.surfaceOpacity;
+
             // For each terrain tile, render it for each overlapping surface tile.
             program = this.beginRendering(dc, opacity);
             terrain.beginRendering(dc);
@@ -119,7 +121,7 @@ define([
         // Intentionally not documented.
         SurfaceTileRenderer.prototype.beginRendering = function (dc, opacity) {
             var gl = dc.currentGlContext,
-                program = dc.findAndBindProgram(gl, SurfaceTileRendererProgram);
+                program = dc.findAndBindProgram(SurfaceTileRendererProgram);
             program.loadTexSampler(gl, WebGLRenderingContext.TEXTURE0);
 
             if (dc.pickingMode && !this.isSurfaceShapeTileRendering) {
@@ -134,7 +136,9 @@ define([
 
         // Intentionally not documented.
         SurfaceTileRenderer.prototype.endRendering = function (dc) {
-            dc.bindProgram(dc.currentGlContext, null);
+            var gl = dc.currentGlContext;
+            gl.bindTexture(WebGLRenderingContext.TEXTURE_2D, null);
+            dc.bindProgram(null);
         };
 
         // Intentionally not documented.

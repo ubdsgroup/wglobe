@@ -4,7 +4,7 @@
  */
 /**
  * @exports Polygon
- * @version $Id: Polygon.js 3109 2015-05-26 19:13:06Z tgaskins $
+ * @version $Id: Polygon.js 3261 2015-06-25 01:16:31Z tgaskins $
  */
 define([
         '../shapes/AbstractShape',
@@ -81,23 +81,34 @@ define([
          *     specified is applied to the remaining segments. Texture coordinates for the polygon's texture are
          *     specified via this polygon's [textureCoordinates]{@link Polygon#textureCoordinates} property. Texture
          *     coordinates for extruded boundary segments are implicitly defined to fit the full texture to each
-         *     boundary segment. The imageOffset and imageScale properties of this polygon's shape attributes are not
-         *     utilized.
+         *     boundary segment.
          * <p>
-         *     When displayed on a 2D globe, this polygon displays as a {@link SurfacePolygon}.
+         *     When displayed on a 2D globe, this polygon displays as a {@link SurfacePolygon} if its
+         *     [useSurfaceShapeFor2D]{@link AbstractShape#useSurfaceShapeFor2D} property is true.
          *
-         * @param {Position[][]} boundaries A two-dimensional array containing the polygon boundaries. Each entry of the
-         * array specifies the vertices for one boundary of the polygon, in geographic coordinates. The first boundary
-         * in the array is considered the outer boundary for the purpose of calculating the polygon's extent.
+         * @param {Position[][] | Position[]} boundaries A two-dimensional array containing the polygon boundaries.
+         * Each entry of the array specifies the vertices of one boundary.
+         * This argument may also be a simple array of positions,
+         * in which case the polygon is assumed to have only one boundary.
+         * Each boundary is considered implicitly closed, so the last position of the boundary need not and should not
+         * duplicate the first position of the boundary.
+         * @param {ShapeAttributes} attributes The attributes to associate with this polygon. May be null, in which case
+         * default attributes are associated.
+         *
          * @throws {ArgumentError} If the specified boundaries array is null or undefined.
          */
-        var Polygon = function (boundaries) {
+        var Polygon = function (boundaries, attributes) {
             if (!boundaries) {
                 throw new ArgumentError(
                     Logger.logMessage(Logger.LEVEL_SEVERE, "Polygon", "constructor", "missingBoundaries"));
             }
 
-            AbstractShape.call(this);
+            AbstractShape.call(this, attributes);
+
+            if (boundaries.length > 0 && boundaries[0].latitude) {
+                boundaries = [boundaries];
+                this._boundariesSpecifiedSimply = true;
+            }
 
             // Private. Documentation is with the defined property below and the constructor description above.
             this._boundaries = boundaries;
@@ -115,18 +126,25 @@ define([
 
         Object.defineProperties(Polygon.prototype, {
             /**
-             * This polygon's boundaries. See the description of the boundaries argument in the constructor.
-             * @type {Position[][]}
+             * This polygon's boundaries. A two-dimensional array containing the polygon boundaries. Each entry of the
+             * array specifies the vertices of one boundary. This property may also be a simple
+             * array of positions, in which case the polygon is assumed to have only one boundary.
+             * @type {Position[][] | Position[]}
              * @memberof Polygon.prototype
              */
             boundaries: {
                 get: function () {
-                    return this._boundaries;
+                    return this._boundariesSpecifiedSimply ? this._boundaries[0] : this._boundaries;
                 },
                 set: function (boundaries) {
                     if (!boundaries) {
                         throw new ArgumentError(
                             Logger.logMessage(Logger.LEVEL_SEVERE, "Polygon", "boundaries", "missingBoundaries"));
+                    }
+
+                    if (boundaries.length > 0 && boundaries[0].latitude) {
+                        boundaries = [boundaries];
+                        this._boundariesSpecifiedSimply = true;
                     }
 
                     this._boundaries = boundaries;
@@ -137,9 +155,9 @@ define([
 
             /**
              * This polygon's texture coordinates if this polygon is to be textured. A texture coordinate must be
-             * provided for each boundary position. The texture coordinates are specified in the same arrangement
-             * as the boundaries, with a two-dimensional array, each entry of which specifies the texture coordinates
-             * for one boundary. Each texture coordinate is a {@link Vec2} containing the s and t coordinates.
+             * provided for each boundary position. The texture coordinates are specified as a two-dimensional array,
+             * each entry of which specifies the texture coordinates for one boundary. Each texture coordinate is a
+             * {@link Vec2} containing the s and t coordinates.
              * @type {Vec2[][]}
              * @default null
              * @memberof Polygon.prototype
@@ -239,6 +257,10 @@ define([
             return this.activeAttributes.imageSource[side];
         };
 
+        Polygon.prototype.createSurfaceShape = function () {
+            return new SurfacePolygon(this.boundaries, null);
+        };
+
         // Overridden from AbstractShape base class.
         Polygon.prototype.doMakeOrderedRenderable = function (dc) {
             // A null reference position is a signal that there are no boundaries to render.
@@ -296,7 +318,17 @@ define([
             if (!currentData.extent) {
                 currentData.extent = new BoundingBox();
             }
-            currentData.extent.setToPoints(boundaryPoints[0]); // use only the first boundary
+            if (boundaryPoints.length === 1) {
+                currentData.extent.setToPoints(boundaryPoints[0]);
+            } else {
+                var allPoints = [];
+                for (b = 0; b < boundaryPoints.length; b++) {
+                    for (var p = 0; p < boundaryPoints[b].length; p++) {
+                        allPoints.push(boundaryPoints[b][p]);
+                    }
+                }
+                currentData.extent.setToPoints(allPoints);
+            }
             currentData.extent.translate(currentData.referencePoint);
 
             return this;
@@ -498,7 +530,7 @@ define([
 
                 stride = hasCapTexture ? 20 : 12;
 
-                if (hasCapTexture) {
+                if (hasCapTexture && !dc.pickingMode) {
                     this.activeTexture = dc.gpuResourceCache.resourceForKey(this.capImageSource());
                     if (!this.activeTexture) {
                         this.activeTexture =
@@ -557,7 +589,7 @@ define([
                     }
 
                     // Draw the extruded boundary.
-                    if (this.activeAttributes.drawInterior && this._extrude && !hasSideTextures) {
+                    if (this.activeAttributes.drawInterior && this._extrude && (!hasSideTextures || dc.pickingMode)) {
                         this.applyMvpMatrix(dc);
 
                         color = this.activeAttributes.interiorColor;
@@ -613,7 +645,7 @@ define([
                 // If the extruded boundaries are textured, draw them here. This is a separate block because the
                 // operation must create its own vertex VBO in order to include texture coordinates. It can't simply
                 // use the previously computed boundary-points VBO.
-                if (hasSideTextures && this.activeAttributes.drawInterior && this._extrude) {
+                if (hasSideTextures && this.activeAttributes.drawInterior && this._extrude && !dc.pickingMode) {
                     this.applyMvpMatrix(dc);
 
                     color = this.activeAttributes.interiorColor;
@@ -643,7 +675,6 @@ define([
                             if (textureBound) {
                                 program.loadTextureEnabled(gl, true);
                                 program.loadTextureUnit(gl, WebGLRenderingContext.TEXTURE0);
-                                program.loadModulateColor(gl, dc.pickingMode);
                                 gl.enableVertexAttribArray(program.vertexTexCoordLocation);
                             } else {
                                 program.loadTextureEnabled(gl, false);
@@ -705,7 +736,7 @@ define([
                 gl.disable(WebGLRenderingContext.CULL_FACE);
             }
 
-            dc.findAndBindProgram(gl, BasicTextureProgram);
+            dc.findAndBindProgram(BasicTextureProgram);
             gl.enableVertexAttribArray(dc.currentProgram.vertexPointLocation);
         };
 
@@ -714,7 +745,7 @@ define([
             var gl = dc.currentGlContext;
 
             gl.disableVertexAttribArray(dc.currentProgram.vertexPointLocation);
-            dc.bindProgram(gl, null);
+            dc.bindProgram(null);
             gl.depthMask(true);
             gl.lineWidth(1);
             gl.enable(WebGLRenderingContext.CULL_FACE);

@@ -4,7 +4,7 @@
  */
 /**
  * @exports Tessellator
- * @version $Id: Tessellator.js 3068 2015-05-06 19:23:44Z dcollins $
+ * @version $Id: Tessellator.js 3136 2015-06-02 17:14:24Z dcollins $
  */
 define([
         '../error/ArgumentError',
@@ -574,7 +574,7 @@ define([
             var gl = dc.currentGlContext;
 
             try {
-                dc.findAndBindProgram(gl, BasicProgram);
+                dc.findAndBindProgram(BasicProgram);
                 dc.currentProgram.loadColor(gl, color);
                 this.beginRendering(dc);
 
@@ -586,7 +586,7 @@ define([
                 }
             } finally {
                 this.endRendering(dc);
-                dc.bindProgram(gl, null);
+                dc.bindProgram(null);
             }
         };
 

@@ -4,7 +4,7 @@
  */
 /**
  * @exports Path
- * @version $Id: Path.js 3109 2015-05-26 19:13:06Z tgaskins $
+ * @version $Id: Path.js 3259 2015-06-25 00:53:55Z tgaskins $
  */
 define([
         '../shapes/AbstractShape',
@@ -67,16 +67,22 @@ define([
          * <p>
          *     A path displays as a curtain if its [extrude]{@link Path#extrude} property is true. A curtain extends
          *     from the line formed by the path positions to the ground.
+         * <p>
+         *     This shape uses a {@link SurfacePolyline} when drawing on 2D globes and this shape's
+         *     [useSurfaceShapeFor2D]{@link AbstractShape#useSurfaceShapeFor2D} is true.
+         *
          * @param {Position[]} positions An array containing the path positions.
+         * @param {ShapeAttributes} attributes The attributes to associate with this path. May be null, in which case
+         * default attributes are associated.
          * @throws {ArgumentError} If the specified positions array is null or undefined.
          */
-        var Path = function (positions) {
+        var Path = function (positions, attributes) {
             if (!positions) {
                 throw new ArgumentError(
                     Logger.logMessage(Logger.LEVEL_SEVERE, "Path", "constructor", "missingPositions"));
             }
 
-            AbstractShape.call(this);
+            AbstractShape.call(this, attributes);
 
             // Private. Documentation is with the defined property below.
             this._positions = positions;
@@ -613,7 +619,7 @@ define([
                 gl.disable(WebGLRenderingContext.CULL_FACE);
             }
 
-            dc.findAndBindProgram(gl, BasicTextureProgram);
+            dc.findAndBindProgram(BasicTextureProgram);
             gl.enableVertexAttribArray(dc.currentProgram.vertexPointLocation);
         };
 
@@ -622,7 +628,7 @@ define([
             var gl = dc.currentGlContext;
 
             gl.disableVertexAttribArray(dc.currentProgram.vertexPointLocation);
-            dc.bindProgram(gl, null);
+            dc.bindProgram(null);
             gl.depthMask(true);
             gl.lineWidth(1);
             gl.enable(WebGLRenderingContext.CULL_FACE);

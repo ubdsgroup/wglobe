@@ -4,7 +4,7 @@
  */
 /**
  * @exports Text
- * @version $Id: Text.js 2951 2015-03-31 23:31:08Z tgaskins $
+ * @version $Id: Text.js 3262 2015-06-25 16:50:39Z tgaskins $
  */
 define([
         '../error/ArgumentError',
@@ -120,6 +120,50 @@ define([
              */
             this.alwaysOnTop = false;
 
+            /**
+             * This shape's target visibility, a value between 0 and 1. During ordered rendering this shape modifies its
+             * [current visibility]{@link Text#currentVisibility} towards its target visibility at the rate
+             * specified by the draw context's [fadeVelocity]{@link DrawContext#fadeVelocity} property. The target
+             * visibility and current visibility are used to control the fading in and out of this shape.
+             * @type {Number}
+             * @default 1
+             */
+            this.targetVisibility = 1;
+
+            /**
+             * This shape's current visibility, a value between 0 and 1. This property scales the shape's effective
+             * opacity. It is incremented or decremented each frame according to the draw context's
+             * [fade velocity]{@link DrawContext#fadeVelocity} property in order to achieve this shape's current
+             * [target visibility]{@link Text#targetVisibility}. This current visibility and target visibility are
+             * used to control the fading in and out of this shape.
+             * @type {Number}
+             * @default 1
+             * @readonly
+             */
+            this.currentVisibility = 1;
+
+            /**
+             * Indicates the group ID of the declutter group to include this Text shape. If non-zer0, this shape
+             * is decluttered relative to all other shapes within its group.
+             * @type {Number}
+             * @default 0
+             */
+            this.declutterGroup = 0;
+
+            /**
+             * The image to display when this text shape is eliminated from the scene due to decluttering.
+             * @type {String}
+             * @default A round dot drawn in this shape's text color.
+             */
+            this.markerImageSource = WorldWind.configuration.baseUrl + "images/white-dot.png";
+
+            /**
+             * The scale to apply to the [markerImageSource]{@link Text#markerImageSource}.
+             * @type {Number}
+             * @default 0.1
+             */
+            this.markerImageScale = 0.1;
+
             // Internal use only. Intentionally not documented.
             this.activeAttributes = null;
 
@@ -165,9 +209,26 @@ define([
             this.pickDelegate = that.pickDelegate;
             this.alwaysOnTop = that.alwaysOnTop;
             this.depthOffset = that.depthOffset;
+            this.declutterGroup = that.declutterGroup;
+            this.targetVisibility = that.targetVisibility;
+            this.currentVisibility = that.currentVisibility;
 
             return this;
         };
+
+        Object.defineProperties(Text.prototype, {
+            /**
+             * Indicates the screen coordinate bounds of this shape during ordered rendering.
+             * @type {Rectangle}
+             * @readonly
+             * @memberof Text.prototype
+             */
+            screenBounds: {
+                get: function () {
+                    return this.imageBounds;
+                }
+            }
+        });
 
         /**
          * Renders this text. This method is typically not called by applications but is called by
@@ -177,6 +238,10 @@ define([
          */
         Text.prototype.render = function (dc) {
             if (!this.enabled || (!this.text) || this.text.length === 0) {
+                return;
+            }
+
+            if (!dc.accumulateOrderedRenderables) {
                 return;
             }
 
@@ -210,6 +275,11 @@ define([
          * @param {DrawContext} dc The current draw context.
          */
         Text.prototype.renderOrdered = function (dc) {
+            // Optimize away the case of achieved target visibility of 0 and no marker image to display in that case.
+            if (this.currentVisibility === 0 && this.targetVisibility === 0 && !this.markerImageSource) {
+                return;
+            }
+
             this.drawOrderedText(dc);
 
             if (dc.pickingMode) {
@@ -231,7 +301,9 @@ define([
             }
 
             //// Compute the text's screen point and distance to the eye point.
-            this.computeScreenPointAndEyeDistance(dc);
+            if (!this.computeScreenPointAndEyeDistance(dc)) {
+                return null;
+            }
 
             var labelFont = this.activeAttributes.font,
                 textureKey = this.text + labelFont.toString();
@@ -262,6 +334,7 @@ define([
         /**
          * Computes this shape's screen point and eye distance. Subclasses must override this method.
          * @param {DrawContext} dc The current draw context.
+         * @returns {Boolean} true if the screen point can be computed, otherwise false.
          * @protected
          */
         Text.prototype.computeScreenPointAndEyeDistance = function (dc) {
@@ -326,7 +399,7 @@ define([
             var gl = dc.currentGlContext,
                 program;
 
-            dc.findAndBindProgram(gl, BasicTextureProgram);
+            dc.findAndBindProgram(BasicTextureProgram);
 
             // Configure GL to use the draw context's unit quad VBOs for both model coordinates and texture coordinates.
             // Most browsers can share the same buffer for vertex and texture coordinates, but Internet Explorer requires
@@ -368,7 +441,7 @@ define([
             gl.disableVertexAttribArray(program.vertexTexCoordLocation);
 
             // Clear GL bindings.
-            dc.bindProgram(gl, null);
+            dc.bindProgram(null);
             gl.bindBuffer(WebGLRenderingContext.ARRAY_BUFFER, null);
             gl.bindTexture(WebGLRenderingContext.TEXTURE_2D, null);
 
@@ -384,41 +457,114 @@ define([
                 program = dc.currentProgram,
                 textureBound;
 
-            // Compute and specify the MVP matrix.
-            Text.matrix.copy(dc.screenProjection);
-            Text.matrix.multiplyMatrix(this.imageTransform);
-            program.loadModelviewProjection(gl, Text.matrix);
-
-            // Set the pick color for picking or the color, opacity and texture if not picking.
             if (dc.pickingMode) {
                 this.pickColor = dc.uniquePickColor();
-                program.loadColor(gl, this.pickColor);
-                program.loadTextureEnabled(gl, false);
-            } else {
-                program.loadColor(gl, this.activeAttributes.color);
-                program.loadOpacity(gl, this.layer.opacity);
+            }
 
-                this.texCoordMatrix.setToIdentity();
-                if (this.activeTexture) {
-                    this.texCoordMatrix.multiplyByTextureTransform(this.activeTexture);
-                }
-                program.loadTextureMatrix(gl, this.texCoordMatrix);
-
-                if (this.activeTexture && this.activeTexture != Text.currentTexture) { // avoid unnecessary texture state changes
-                    textureBound = this.activeTexture.bind(dc); // returns false if active texture is null or cannot be bound
-                    program.loadTextureEnabled(gl, textureBound);
-                    Text.currentTexture = this.activeTexture;
+            // Compute the effective visibility. Use the current value if picking.
+            if (!dc.pickingMode) {
+                if (this.currentVisibility != this.targetVisibility) {
+                    var visibilityDelta = (dc.timestamp - dc.previousTimestamp) / dc.fadeTime;
+                    if (this.currentVisibility < this.targetVisibility) {
+                        this.currentVisibility = Math.min(1, this.currentVisibility + visibilityDelta);
+                    } else {
+                        this.currentVisibility = Math.max(0, this.currentVisibility - visibilityDelta);
+                    }
+                    dc.redrawRequested = true;
                 }
             }
 
-            // Turn off depth testing for the label unless it's been requested.
-            if (!this.activeAttributes.depthTest) {
-                gl.disable(WebGLRenderingContext.DEPTH_TEST, false);
+            if (this.currentVisibility > 0) {
+                // Draw the text, with its effective opacity scaled by the current visibility.
+
+                // Compute and specify the MVP matrix.
+                Text.matrix.copy(dc.screenProjection);
+                Text.matrix.multiplyMatrix(this.imageTransform);
+                program.loadModelviewProjection(gl, Text.matrix);
+
+                // Set the pick color for picking or the color, opacity and texture if not picking.
+                if (dc.pickingMode) {
+                    program.loadColor(gl, this.pickColor);
+                    program.loadTextureEnabled(gl, false);
+                } else {
+                    program.loadColor(gl, this.activeAttributes.color);
+                    program.loadOpacity(gl, this.layer.opacity * this.currentVisibility);
+
+                    this.texCoordMatrix.setToIdentity();
+                    if (this.activeTexture) {
+                        this.texCoordMatrix.multiplyByTextureTransform(this.activeTexture);
+                    }
+                    program.loadTextureMatrix(gl, this.texCoordMatrix);
+
+                    // Avoid unnecessary texture state changes
+                    if (this.activeTexture && this.activeTexture != Text.currentTexture) {
+                        textureBound = this.activeTexture.bind(dc); // returns false if texture is null or cannot be bound
+                        program.loadTextureEnabled(gl, textureBound);
+                        Text.currentTexture = this.activeTexture;
+                    }
+                }
+
+                // Turn off depth testing for the label unless it's been requested.
+                if (!this.activeAttributes.depthTest) {
+                    gl.disable(WebGLRenderingContext.DEPTH_TEST, false);
+                }
+                gl.drawArrays(WebGLRenderingContext.TRIANGLE_STRIP, 0, 4);
+                if (!this.activeAttributes.depthTest) {
+                    // Turn depth testing back on.
+                    gl.disable(WebGLRenderingContext.DEPTH_TEST, true);
+                }
             }
-            gl.drawArrays(WebGLRenderingContext.TRIANGLE_STRIP, 0, 4);
-            if (!this.activeAttributes.depthTest) {
-                // Turn depth testing back on.
-                gl.disable(WebGLRenderingContext.DEPTH_TEST, true);
+
+            if (this.currentVisibility < 1 && this.markerImageSource) {
+                // Draw an icon at the text's geographic position to indicate that something is there.
+
+                var markerTexture = dc.gpuResourceCache.resourceForKey(this.markerImageSource);
+                if (!markerTexture) {
+                    dc.gpuResourceCache.retrieveTexture(dc.currentGlContext, this.markerImageSource);
+                    return;
+                }
+
+                var s = this.markerImageScale;
+                var markerTransform = Matrix.fromIdentity();
+                markerTransform.setTranslation(
+                    this.screenPoint[0] - s * markerTexture.imageWidth / 2,
+                    this.screenPoint[1] - s * markerTexture.imageWidth / 2,
+                    this.screenPoint[2]);
+
+                markerTransform.setScale(markerTexture.imageWidth * s, markerTexture.imageHeight * s, 1);
+
+                Text.matrix.copy(dc.screenProjection);
+                Text.matrix.multiplyMatrix(markerTransform);
+                program.loadModelviewProjection(gl, Text.matrix);
+
+                if (dc.pickingMode) {
+                    program.loadColor(gl, this.pickColor);
+                    program.loadTextureEnabled(gl, false);
+                } else {
+                    program.loadColor(gl, this.activeAttributes.color);
+                    program.loadOpacity(gl, this.layer.opacity * ( 1 - this.currentVisibility));
+
+                    var tcMatrix = Matrix.fromIdentity();
+                    tcMatrix.multiplyByTextureTransform(markerTexture);
+                    program.loadTextureMatrix(gl, tcMatrix);
+
+                    // Avoid unnecessary texture state changes
+                    if (markerTexture != Text.currentTexture) {
+                        textureBound = markerTexture.bind(dc); // returns false if texture is null or cannot be bound
+                        program.loadTextureEnabled(gl, textureBound);
+                        Text.currentTexture = markerTexture;
+                    }
+                }
+
+                // Turn off depth testing unless it's been requested.
+                if (!this.activeAttributes.depthTest) {
+                    gl.disable(WebGLRenderingContext.DEPTH_TEST, false);
+                }
+                gl.drawArrays(WebGLRenderingContext.TRIANGLE_STRIP, 0, 4);
+                if (!this.activeAttributes.depthTest) {
+                    // Turn depth testing back on.
+                    gl.disable(WebGLRenderingContext.DEPTH_TEST, true);
+                }
             }
         };
 

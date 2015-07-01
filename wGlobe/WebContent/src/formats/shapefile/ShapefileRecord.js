@@ -4,7 +4,7 @@
  */
 /**
  * @exports ShapefileRecord
- * @version $Id: ShapefileRecord.js 2983 2015-04-06 22:54:49Z danm $
+ * @version $Id: ShapefileRecord.js 3190 2015-06-15 19:30:14Z tgaskins $
  */
 define([
         '../../geom/Angle',
@@ -454,6 +454,14 @@ define([
          */
         ShapefileRecord.prototype.isPointType = function() {
             return this.shapefile.isPointType();
+        };
+
+        /**
+         * Indicate whether the record is of a point type.
+         * @returns {Boolean} True if the record is of a point type.
+         */
+        ShapefileRecord.prototype.isMultiPointType = function() {
+            return this.shapefile.isMultiPointType();
         };
 
         /**

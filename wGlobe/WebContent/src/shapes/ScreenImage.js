@@ -4,7 +4,7 @@
  */
 /**
  * @exports ScreenImage
- * @version $Id: ScreenImage.js 3114 2015-05-27 01:08:58Z tgaskins $
+ * @version $Id: ScreenImage.js 3206 2015-06-17 18:06:31Z tgaskins $
  */
 define([
         '../error/ArgumentError',
@@ -187,6 +187,10 @@ define([
                 return;
             }
 
+            if (!dc.accumulateOrderedRenderables) {
+                return;
+            }
+
             // Create an ordered renderable, but don't create more than one per frame.
             var orderedScreenImage = null;
             if (this.lastFrameTime !== dc.timestamp) {
@@ -288,7 +292,7 @@ define([
             var gl = dc.currentGlContext,
                 program;
 
-            dc.findAndBindProgram(gl, BasicTextureProgram);
+            dc.findAndBindProgram(BasicTextureProgram);
 
             // Configure GL to use the draw context's unit quad VBOs for both model coordinates and texture coordinates.
             // Most browsers can share the same buffer for vertex and texture coordinates, but Internet Explorer requires
@@ -305,7 +309,8 @@ define([
             program.loadModulateColor(gl, dc.pickingMode);
 
             // Turn off depth testing.
-            gl.disable(WebGLRenderingContext.DEPTH_TEST);
+            // tag, 6/17/15: It's not clear why this call was here. It was carried over from WWJ.
+            //gl.disable(WebGLRenderingContext.DEPTH_TEST);
         };
 
         // Internal. Intentionally not documented.
@@ -318,7 +323,7 @@ define([
             gl.disableVertexAttribArray(program.vertexTexCoordLocation);
 
             // Clear GL bindings.
-            dc.bindProgram(gl, null);
+            dc.bindProgram(null);
             gl.bindBuffer(WebGLRenderingContext.ARRAY_BUFFER, null);
             gl.bindTexture(WebGLRenderingContext.TEXTURE_2D, null);
 

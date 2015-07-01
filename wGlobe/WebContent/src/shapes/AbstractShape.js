@@ -4,7 +4,7 @@
  */
 /**
  * @exports AbstractShape
- * @version $Id: AbstractShape.js 3095 2015-05-15 17:15:12Z dcollins $
+ * @version $Id: AbstractShape.js 3259 2015-06-25 00:53:55Z tgaskins $
  */
 define([
         '../error/ArgumentError',
@@ -39,13 +39,16 @@ define([
          *     maintains a cache of data computed relative to the globe displayed in each window. During rendering,
          *     the data for the currently active globe, as indicated in the draw context, is made current.
          *     Subsequently called methods rely on the existence of this data cache entry.
+         *
+         * @param {ShapeAttributes} attributes The attributes to associate with this shape. May be null, in which case
+         * default attributes are associated.
          */
-        var AbstractShape = function () {
+        var AbstractShape = function (attributes) {
 
             Renderable.call(this);
 
             // Documented with its property accessor below.
-            this._attributes = new ShapeAttributes(null);
+            this._attributes = attributes ? attributes : new ShapeAttributes(null);
 
             // Documented with its property accessor below.
             this._highlightAttributes = null;
@@ -166,7 +169,7 @@ define([
         });
 
         /**
-         * Clears this shape's data cache. Should be called by subclasses when state changes that invalidates
+         * Clears this shape's data cache. Should be called by subclasses when state changes invalidate
          * cached data.
          * @protected
          */
@@ -191,6 +194,10 @@ define([
 
         AbstractShape.prototype.render = function (dc) {
             if (!this.enabled) {
+                return;
+            }
+
+            if (!dc.accumulateOrderedRenderables) {
                 return;
             }
 

@@ -4,7 +4,7 @@
  */
 /**
  * @exports ScreenCreditController
- * @version $Id: ScreenCreditController.js 3119 2015-05-28 02:28:08Z tgaskins $
+ * @version $Id: ScreenCreditController.js 3206 2015-06-17 18:06:31Z tgaskins $
  */
 define([
         '../error/ArgumentError',
@@ -159,7 +159,7 @@ define([
             var gl = dc.currentGlContext,
                 program;
 
-            dc.findAndBindProgram(gl, BasicTextureProgram);
+            dc.findAndBindProgram(BasicTextureProgram);
 
             // Configure GL to use the draw context's unit quad VBOs for both model coordinates and texture coordinates.
             // Most browsers can share the same buffer for vertex and texture coordinates, but Internet Explorer requires
@@ -178,7 +178,8 @@ define([
             program.loadModulateColor(gl, false);
 
             // Turn off depth testing.
-            gl.disable(WebGLRenderingContext.DEPTH_TEST);
+            // tag, 6/17/15: It's not clear why this call was here. It was carried over from WWJ.
+            //gl.disable(WebGLRenderingContext.DEPTH_TEST);
         };
 
         // Internal use only. Intentionally not documented.
@@ -191,7 +192,7 @@ define([
             gl.disableVertexAttribArray(program.vertexTexCoordLocation);
 
             // Clear GL bindings.
-            dc.bindProgram(gl, null);
+            dc.bindProgram(null);
             gl.bindBuffer(WebGLRenderingContext.ARRAY_BUFFER, null);
             gl.bindTexture(WebGLRenderingContext.TEXTURE_2D, null);
 

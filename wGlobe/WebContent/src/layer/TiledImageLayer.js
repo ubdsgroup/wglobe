@@ -4,7 +4,7 @@
  */
 /**
  * @exports TiledImageLayer
- * @version $Id: TiledImageLayer.js 2939 2015-03-30 16:50:49Z tgaskins $
+ * @version $Id: TiledImageLayer.js 3132 2015-06-01 22:42:45Z dcollins $
  */
 define([
         '../util/AbsentResourceList',
@@ -299,7 +299,7 @@ define([
                     image = new Image(),
                     imagePath = tile.imagePath,
                     cache = dc.gpuResourceCache,
-                    gl = dc.currentGlContext,
+                    canvas = dc.currentGlContext.canvas,
                     layer = this;
 
                 if (!url) {
@@ -321,7 +321,7 @@ define([
                         // Send an event to request a redraw.
                         var e = document.createEvent('Event');
                         e.initEvent(WorldWind.REDRAW_EVENT_TYPE, true, true);
-                        dc.canvas.dispatchEvent(e);
+                        canvas.dispatchEvent(e);
                     }
                 };
 

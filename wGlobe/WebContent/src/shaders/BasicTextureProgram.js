@@ -4,7 +4,7 @@
  */
 /**
  * @exports BasicTextureProgram
- * @version $Id: BasicTextureProgram.js 2944 2015-03-31 16:05:58Z tgaskins $
+ * @version $Id: BasicTextureProgram.js 3282 2015-06-29 17:33:25Z tgaskins $
  */
 define([
         '../error/ArgumentError',
@@ -38,11 +38,17 @@ define([
             var vertexShaderSource =
                     'attribute vec4 vertexPoint;\n' +
                     'attribute vec4 vertexTexCoord;\n' +
+                    'attribute vec4 normalVector;\n' +
                     'uniform mat4 mvpMatrix;\n' +
+                    'uniform mat4 mvInverseMatrix;\n' +
                     'uniform mat4 texCoordMatrix;\n' +
+                    'uniform bool applyLighting;\n' +
                     'varying vec2 texCoord;\n' +
+                    'varying vec4 normal;\n' +
                     'void main() {gl_Position = mvpMatrix * vertexPoint;\n' +
-                    'texCoord = (texCoordMatrix * vertexTexCoord).st;}',
+                    'texCoord = (texCoordMatrix * vertexTexCoord).st;\n' +
+                    'if (applyLighting) {normal = mvInverseMatrix * normalVector;}\n' +
+                    '}',
                 fragmentShaderSource =
                     'precision mediump float;\n' +
                     'uniform float opacity;\n' +
@@ -50,19 +56,31 @@ define([
                     'uniform bool enableTexture;\n' +
                     'uniform bool modulateColor;\n' +
                     'uniform sampler2D textureSampler;\n' +
+                    'uniform bool applyLighting;\n' +
                     'varying vec2 texCoord;\n' +
+                    'varying vec4 normal;\n' +
                     'void main() {\n' +
                     'vec4 textureColor = texture2D(textureSampler, texCoord);\n' +
+                    'float ambient = 0.15; vec4 lightDirection = vec4(0, 0, 1, 0);\n' +
                     'if (enableTexture && !modulateColor)\n' +
                     '    gl_FragColor = textureColor * color * opacity;\n' +
                     'else if (enableTexture && modulateColor)\n' +
                     '    gl_FragColor = color * floor(textureColor.a + 0.5);\n' +
                     'else\n' +
                     '    gl_FragColor = color * opacity;\n' +
+                    'if (gl_FragColor.a == 0.0) {discard; return;}\n' +
+                    'if (applyLighting) {\n' +
+                    '    vec4 n = normal * (gl_FrontFacing ? 1.0 : -1.0);\n' +
+                    '    gl_FragColor.rgb *= clamp(ambient + dot(lightDirection, n), 0.0, 1.0);\n' +
+                    '}\n' +
                     '}';
 
+            // Specify bindings to avoid the WebGL performance warning that's generated when normalVector gets
+            // bound to location 0.
+            var bindings = ["vertexPoint", "normalVector", "vertexTexCoord"];
+
             // Call to the superclass, which performs shader program compiling and linking.
-            GpuProgram.call(this, gl, vertexShaderSource, fragmentShaderSource);
+            GpuProgram.call(this, gl, vertexShaderSource, fragmentShaderSource, bindings);
 
             /**
              * The WebGL location for this program's 'vertexPoint' attribute.
@@ -70,6 +88,13 @@ define([
              * @readonly
              */
             this.vertexPointLocation = this.attributeLocation(gl, "vertexPoint");
+
+            /**
+             * The WebGL location for this program's 'normalVector' attribute.
+             * @type {Number}
+             * @readonly
+             */
+            this.normalVectorLocation = this.attributeLocation(gl, "normalVector");
 
             /**
              * The WebGL location for this program's 'vertexTexCoord' attribute.
@@ -84,6 +109,13 @@ define([
              * @readonly
              */
             this.mvpMatrixLocation = this.uniformLocation(gl, "mvpMatrix");
+
+            /**
+             * The WebGL location for this program's 'mvInverseMatrix' uniform.
+             * @type {WebGLUniformLocation}
+             * @readonly
+             */
+            this.mvInverseMatrixLocation = this.uniformLocation(gl, "mvInverseMatrix");
 
             /**
              * The WebGL location for this program's 'color' uniform.
@@ -126,6 +158,13 @@ define([
              * @readonly
              */
             this.opacityLocation = this.uniformLocation(gl, "opacity");
+
+            /**
+             * The WegGL location for this program's 'enableLighting' uniform.
+             * @type {WebGLUniformLocation}
+             * @readonly
+             */
+            this.applyLightingLocation = this.uniformLocation(gl, "applyLighting");
         };
 
         /**
@@ -137,6 +176,22 @@ define([
 
         // Inherit from GpuProgram.
         BasicTextureProgram.prototype = Object.create(GpuProgram.prototype);
+
+        /**
+         * Loads the specified matrix as the value of this program's 'mvInverseMatrix' uniform variable.
+         *
+         * @param {WebGLRenderingContext} gl The current WebGL context.
+         * @param {Matrix} matrix The matrix to load.
+         * @throws {ArgumentError} If the specified matrix is null or undefined.
+         */
+        BasicTextureProgram.prototype.loadModelviewInverse = function (gl, matrix) {
+            if (!matrix) {
+                throw new ArgumentError(
+                    Logger.logMessage(Logger.LEVEL_SEVERE, "BasicTextureProgram", "loadModelviewInverse", "missingMatrix"));
+            }
+
+            GpuProgram.loadUniformMatrix(gl, matrix, this.mvInverseMatrixLocation);
+        };
 
         /**
          * Loads the specified matrix as the value of this program's 'mvpMatrix' uniform variable.
@@ -218,6 +273,15 @@ define([
          */
         BasicTextureProgram.prototype.loadOpacity = function (gl, opacity) {
             GpuProgram.loadUniformFloat(gl, opacity, this.opacityLocation);
+        };
+
+        /**
+         * Loads the specified boolean as the value of this program's 'applyLighting' uniform variable.
+         * @param {WebGLRenderingContext} gl The current WebGL context.
+         * @param {Number} applyLighting true to apply lighting, otherwise false.
+         */
+        BasicTextureProgram.prototype.loadApplyLighting = function (gl, applyLighting) {
+            GpuProgram.loadUniformInteger(gl, applyLighting, this.applyLightingLocation);
         };
 
         return BasicTextureProgram;

@@ -4,7 +4,7 @@
  */
 /**
  * @exports Rectangle
- * @version $Id: Rectangle.js 2933 2015-03-27 01:18:24Z tgaskins $
+ * @version $Id: Rectangle.js 3174 2015-06-10 19:36:49Z tgaskins $
  */
 define([
         '../util/Logger'
@@ -125,6 +125,23 @@ define([
                 return false;
 
             return true;
+        };
+
+        /**
+         * Indicates whether this rectangle intersects any rectangle in a specified array of rectangles.
+         * @param {Rectangle[]} rectangles The rectangles to test intersection with.
+         * @returns {Boolean} true if this rectangle intersects any rectangle in the array, otherwise false.
+         */
+        Rectangle.prototype.intersectsRectangles = function (rectangles) {
+            if (rectangles) {
+                for (var i = 0; i < rectangles.length; i++){
+                    if (this.intersects(rectangles[i])) {
+                        return true;
+                    }
+                }
+            }
+
+            return false;
         };
 
         /**

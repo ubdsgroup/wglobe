@@ -3,7 +3,7 @@
  * National Aeronautics and Space Administration. All Rights Reserved.
  */
 /**
- * @version $Id: WorldWind.js 3122 2015-05-28 19:31:39Z tgaskins $
+ * @version $Id: WorldWind.js 3291 2015-06-30 16:52:12Z tgaskins $
  */
 define([ // PLEASE KEEP ALL THIS IN ALPHABETICAL ORDER BY MODULE NAME (not directory name).
         './error/AbstractError',
@@ -21,6 +21,7 @@ define([ // PLEASE KEEP ALL THIS IN ALPHABETICAL ORDER BY MODULE NAME (not direc
         './layer/BMNGOneImageLayer',
         './layer/BMNGRestLayer',
         './geom/BoundingBox',
+        './gesture/ClickRecognizer',
         './util/Color',
         './shapes/Compass',
         './layer/CompassLayer',
@@ -35,11 +36,13 @@ define([ // PLEASE KEEP ALL THIS IN ALPHABETICAL ORDER BY MODULE NAME (not direc
         './render/FramebufferTile',
         './render/FramebufferTileController',
         './geom/Frustum',
+        './shapes/GeographicMesh',
         './projections/GeographicProjection',
         './shapes/GeographicText',
         './gesture/GestureRecognizer',
         './globe/Globe',
         './globe/Globe2D',
+        './util/GoToAnimator',
         './shaders/GpuProgram',
         './cache/GpuResourceCache',
         './shaders/GpuShader',
@@ -61,6 +64,7 @@ define([ // PLEASE KEEP ALL THIS IN ALPHABETICAL ORDER BY MODULE NAME (not direc
         './layer/MercatorTiledImageLayer',
         './navigate/Navigator',
         './navigate/NavigatorState',
+        './util/NominatimGeocoder',
         './error/NotYetImplementedError',
         './util/Offset',
         './layer/OpenStreetMapImageLayer',
@@ -115,6 +119,7 @@ define([ // PLEASE KEEP ALL THIS IN ALPHABETICAL ORDER BY MODULE NAME (not direc
         './layer/TiledImageLayer',
         './util/TileFactory',
         './gesture/TiltRecognizer',
+        './gesture/Touch',
         './error/UnsupportedOperationError',
         './geom/Vec2',
         './geom/Vec3',
@@ -142,6 +147,7 @@ define([ // PLEASE KEEP ALL THIS IN ALPHABETICAL ORDER BY MODULE NAME (not direc
               BMNGOneImageLayer,
               BMNGRestLayer,
               BoundingBox,
+              ClickRecognizer,
               Color,
               Compass,
               CompassLayer,
@@ -156,11 +162,13 @@ define([ // PLEASE KEEP ALL THIS IN ALPHABETICAL ORDER BY MODULE NAME (not direc
               FramebufferTile,
               FramebufferTileController,
               Frustum,
+              GeographicMesh,
               GeographicProjection,
               GeographicText,
               GestureRecognizer,
               Globe,
               Globe2D,
+              GoToAnimator,
               GpuProgram,
               GpuResourceCache,
               GpuShader,
@@ -182,6 +190,7 @@ define([ // PLEASE KEEP ALL THIS IN ALPHABETICAL ORDER BY MODULE NAME (not direc
               MercatorTiledImageLayer,
               Navigator,
               NavigatorState,
+              NominatimGeocoder,
               NotYetImplementedError,
               Offset,
               OpenStreetMapImageLayer,
@@ -236,6 +245,7 @@ define([ // PLEASE KEEP ALL THIS IN ALPHABETICAL ORDER BY MODULE NAME (not direc
               TiledImageLayer,
               TileFactory,
               TiltRecognizer,
+              Touch,
               UnsupportedOperationError,
               Vec2,
               Vec3,
@@ -409,10 +419,22 @@ define([ // PLEASE KEEP ALL THIS IN ALPHABETICAL ORDER BY MODULE NAME (not direc
             REDRAW_EVENT_TYPE: "WorldWindRedraw",
 
             /**
+             * Indicates that the related value is specified relative to the globe.
+             * @constant
+             */
+            RELATIVE_TO_GLOBE: "relativeToGlobe",
+
+            /**
              * Indicates an altitude mode relative to the terrain.
              * @constant
              */
             RELATIVE_TO_GROUND: "relativeToGround",
+
+            /**
+             * Indicates that the related value is specified relative to the plane of the screen.
+             * @constant
+             */
+            RELATIVE_TO_SCREEN: "relativeToScreen",
 
             /**
              * Indicates a rhumb path -- a path of constant bearing.
@@ -448,6 +470,7 @@ define([ // PLEASE KEEP ALL THIS IN ALPHABETICAL ORDER BY MODULE NAME (not direc
         WorldWind['BMNGOneImageLayer'] = BMNGOneImageLayer;
         WorldWind['BMNGRestLayer'] = BMNGRestLayer;
         WorldWind['BoundingBox'] = BoundingBox;
+        WorldWind['ClickRecognizer'] = ClickRecognizer;
         WorldWind['Color'] = Color;
         WorldWind['Compass'] = Compass;
         WorldWind['CompassLayer'] = CompassLayer;
@@ -462,11 +485,13 @@ define([ // PLEASE KEEP ALL THIS IN ALPHABETICAL ORDER BY MODULE NAME (not direc
         WorldWind['FramebufferTile'] = FramebufferTile;
         WorldWind['FramebufferTileController'] = FramebufferTileController;
         WorldWind['Frustum'] = Frustum;
+        WorldWind['GeographicMesh'] = GeographicMesh;
         WorldWind['GeographicProjection'] = GeographicProjection;
         WorldWind['GeographicText'] = GeographicText;
         WorldWind['GestureRecognizer'] = GestureRecognizer;
         WorldWind['Globe'] = Globe;
         WorldWind['Globe2D'] = Globe2D;
+        WorldWind['GoToAnimator'] = GoToAnimator;
         WorldWind['GpuProgram'] = GpuProgram;
         WorldWind['GpuResourceCache'] = GpuResourceCache;
         WorldWind['GpuShader'] = GpuShader;
@@ -488,6 +513,7 @@ define([ // PLEASE KEEP ALL THIS IN ALPHABETICAL ORDER BY MODULE NAME (not direc
         WorldWind['MercatorTiledImageLayer'] = MercatorTiledImageLayer;
         WorldWind['Navigator'] = Navigator;
         WorldWind['NavigatorState'] = NavigatorState;
+        WorldWind['NominatimGeocoder'] = NominatimGeocoder;
         WorldWind['NotYetImplementedError'] = NotYetImplementedError;
         WorldWind['Offset'] = Offset;
         WorldWind['OpenStreetMapImageLayer'] = OpenStreetMapImageLayer;
@@ -542,6 +568,7 @@ define([ // PLEASE KEEP ALL THIS IN ALPHABETICAL ORDER BY MODULE NAME (not direc
         WorldWind['TiledImageLayer'] = TiledImageLayer;
         WorldWind['TileFactory'] = TileFactory;
         WorldWind['TiltRecognizer'] = TiltRecognizer;
+        WorldWind['Touch'] = Touch;
         WorldWind['UnsupportedOperationError'] = UnsupportedOperationError;
         WorldWind['Vec2'] = Vec2;
         WorldWind['Vec3'] = Vec3;
@@ -567,7 +594,7 @@ define([ // PLEASE KEEP ALL THIS IN ALPHABETICAL ORDER BY MODULE NAME (not direc
          */
         WorldWind.configuration = {
             gpuCacheSize: 250e6,
-            baseUrl: (WWUtil.worldwindlibLocation()) || (WWUtil.currentUrlSansFilePart() + '/../')
+            baseUrl: (WWUtil.worldwindlibLocation()) || (WWUtil.currentUrlSansFilePart() + "/")
         };
 
         /**

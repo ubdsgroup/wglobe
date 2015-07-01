@@ -4,16 +4,16 @@
  */
 /**
  * @exports Globe2D
- * @version $Id: Globe2D.js 2947 2015-03-31 20:38:36Z dcollins $
+ * @version $Id: Globe2D.js 3205 2015-06-17 18:05:23Z tgaskins $
  */
 define([
         '../geom/Angle',
         '../error/ArgumentError',
         '../geom/BoundingBox',
-        '../projections/ProjectionEquirectangular',
         '../projections/GeographicProjection',
         '../globe/Globe',
         '../util/Logger',
+        '../projections/ProjectionEquirectangular',
         '../geom/Sector',
         '../globe/Tessellator',
         '../geom/Vec3',
@@ -22,10 +22,10 @@ define([
     function (Angle,
               ArgumentError,
               BoundingBox,
-              ProjectionEquirectangular,
               GeographicProjection,
               Globe,
               Logger,
+              ProjectionEquirectangular,
               Sector,
               Tessellator,
               Vec3,

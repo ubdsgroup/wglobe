@@ -3,7 +3,7 @@
  * National Aeronautics and Space Administration. All Rights Reserved.
  */
 /**
- * @version $Id: WWUtil.js 3072 2015-05-06 22:30:41Z tgaskins $
+ * @version $Id: WWUtil.js 3133 2015-06-02 16:48:25Z tgaskins $
  */
 define([
         '../error/ArgumentError',
@@ -22,6 +22,9 @@ define([
          * @exports WWUtil
          */
         var WWUtil = {
+            // A regular expression that matches latitude followed by a comma and possible white space followed by
+            // longitude. Latitude and longitude ranges are not considered.
+            latLonRegex: /^(\-?\d+(\.\d+)?),\s*(\-?\d+(\.\d+)?)$/,
 
             /**
              * Returns the suffix for a specified mime type.

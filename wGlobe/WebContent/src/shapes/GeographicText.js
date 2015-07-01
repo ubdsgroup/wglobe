@@ -4,7 +4,7 @@
  */
 /**
  * @exports GeographicText
- * @version $Id: GeographicText.js 3109 2015-05-26 19:13:06Z tgaskins $
+ * @version $Id: GeographicText.js 3262 2015-06-25 16:50:39Z tgaskins $
  */
 define([
         '../error/ArgumentError',
@@ -46,6 +46,16 @@ define([
              * @type {Position}
              */
             this.position = position;
+
+            /**
+             * Indicates the group ID of the declutter group to include this Text shape. This shape
+             * is decluttered relative to all other shapes within its group by the default
+             * [declutter filter]{@link WorldWindow#declutter}. To prevent decluttering of this shape, set its
+             * declutter group to 0.
+             * @type {Number}
+             * @default 1
+             */
+            this.declutterGroup = 1;
         };
 
         // Internal use only. Intentionally not documented.
@@ -83,6 +93,10 @@ define([
             dc.surfacePointForMode(this.position.latitude, this.position.longitude, this.position.altitude,
                 this.altitudeMode, GeographicText.placePoint);
 
+            if (!dc.navigatorState.frustumInModelCoordinates.containsPoint(GeographicText.placePoint)) {
+                return false;
+            }
+
             this.eyeDistance = this.alwaysOnTop ? 0 : dc.navigatorState.eyePoint.distanceTo(GeographicText.placePoint);
 
             // Compute the text's screen point in the OpenGL coordinate system of the WorldWindow by projecting its model
@@ -91,8 +105,10 @@ define([
             // yet as a screen element the text is expected to be visible. We adjust its depth values rather than moving
             // the text itself to avoid obscuring its actual position.
             if (!dc.navigatorState.projectWithDepth(GeographicText.placePoint, this.depthOffset, this.screenPoint)) {
-                return null;
+                return false;
             }
+
+            return true;
         };
 
         return GeographicText;

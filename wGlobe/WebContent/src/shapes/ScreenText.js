@@ -4,7 +4,7 @@
  */
 /**
  * @exports ScreenText
- * @version $Id: ScreenText.js 2951 2015-03-31 23:31:08Z tgaskins $
+ * @version $Id: ScreenText.js 3262 2015-06-25 16:50:39Z tgaskins $
  */
 define([
         '../error/ArgumentError',
@@ -66,9 +66,11 @@ define([
         // Documented in superclass.
         ScreenText.prototype.computeScreenPointAndEyeDistance = function (dc) {
             dc.navigatorState.convertPointToViewport(this.screenPosition, this.screenPoint);
-            this.screenPoint[2] = 1;
+            this.screenPoint[2] = 0;
 
             this.eyeDistance = 0;
+
+            return true;
         };
 
         return ScreenText;

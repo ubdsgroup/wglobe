@@ -4,7 +4,7 @@
  */
 /**
  * @exports BlueMarbleLayer
- * @version $Id: BlueMarbleLayer.js 3122 2015-05-28 19:31:39Z tgaskins $
+ * @version $Id: BlueMarbleLayer.js 3126 2015-05-29 14:48:36Z tgaskins $
  */
 define([
         '../layer/BMNGLayer',
@@ -86,6 +86,8 @@ define([
             layer.opacity = this.opacity;
 
             layer.doRender(dc);
+
+            this.inCurrentFrame = layer.inCurrentFrame;
         };
 
         // Intentionally not documented.

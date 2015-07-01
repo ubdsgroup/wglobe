@@ -4,7 +4,7 @@
  */
 /**
  * @exports PinchRecognizer
- * @version $Id: PinchRecognizer.js 2808 2015-02-17 01:05:18Z dcollins $
+ * @version $Id: PinchRecognizer.js 3239 2015-06-22 23:28:12Z dcollins $
  */
 define(['../gesture/GestureRecognizer'],
     function (GestureRecognizer) {
@@ -14,28 +14,34 @@ define(['../gesture/GestureRecognizer'],
          * Constructs a pinch gesture recognizer.
          * @alias PinchRecognizer
          * @constructor
+         * @augments GestureRecognizer
          * @classdesc A concrete gesture recognizer subclass that looks for two finger pinch gestures.
+         * @param {EventTarget} target The document element this gesture recognizer observes for mouse and touch events.
+         * @param {Function} callback An optional function to call when this gesture is recognized. If non-null, the
+         * function is called when this gesture is recognized, and is passed a single argument: this gesture recognizer,
+         * e.g., <code>gestureCallback(recognizer)</code>.
+         * @throws {ArgumentError} If the specified target is null or undefined.
          */
-        var PinchRecognizer = function (target) {
-            GestureRecognizer.call(this, target);
+        var PinchRecognizer = function (target, callback) {
+            GestureRecognizer.call(this, target, callback);
 
-            // Internal use only. Intentionally not documented.
+            // Intentionally not documented.
             this._scale = 1;
 
-            // Internal use only. Intentionally not documented.
+            // Intentionally not documented.
             this._offsetScale = 1;
 
-            // Internal use only. Intentionally not documented.
+            // Intentionally not documented.
             this.referenceDistance = 0;
 
-            // Internal use only. Intentionally not documented.
-            this.threshold = 20;
+            // Intentionally not documented.
+            this.interpretThreshold = 20;
 
-            // Internal use only. Intentionally not documented.
+            // Intentionally not documented.
             this.weight = 0.4;
 
-            // Internal use only. Intentionally not documented.
-            this.touchIds = [];
+            // Intentionally not documented.
+            this.pinchTouches = [];
         };
 
         PinchRecognizer.prototype = Object.create(GestureRecognizer.prototype);
@@ -48,167 +54,106 @@ define(['../gesture/GestureRecognizer'],
             }
         });
 
-        /**
-         * @param newState
-         * @protected
-         */
-        PinchRecognizer.prototype.didTransitionToState = function (newState) {
-            GestureRecognizer.prototype.didTransitionToState.call(this, newState);
-
-            if (newState == WorldWind.BEGAN) {
-                this.gestureBegan();
-            } else if (newState == WorldWind.CHANGED) {
-                this.gestureChanged();
-            }
-        };
-
-        /**
-         * @protected
-         */
+        // Documented in superclass.
         PinchRecognizer.prototype.reset = function () {
             GestureRecognizer.prototype.reset.call(this);
 
             this._scale = 1;
             this._offsetScale = 1;
             this.referenceDistance = 0;
-            this.touchIds = [];
+            this.pinchTouches = [];
         };
 
-        /**
-         *
-         * @param event
-         * @protected
-         */
+        // Documented in superclass.
         PinchRecognizer.prototype.mouseDown = function (event) {
-            GestureRecognizer.prototype.mouseDown.call(this, event);
-
             if (this.state == WorldWind.POSSIBLE) {
-                this.transitionToState(WorldWind.FAILED); // pinch does not recognize mouse input
+                this.state = WorldWind.FAILED; // touch gestures fail upon receiving a mouse event
             }
         };
 
-        /**
-         *
-         * @param event
-         * @protected
-         */
-        PinchRecognizer.prototype.touchStart = function (event) {
-            GestureRecognizer.prototype.touchStart.call(this, event);
-
-            if (this.touchIds.length < 2) {
-                for (var i = 0; i < event.changedTouches.length && this.touchIds.length < 2; i++) {
-                    this.touchIds.push(event.changedTouches.item(i).identifier);
-                }
-
-                if (this.touchIds.length == 2) {
-                    this.touchesStarted();
+        // Documented in superclass.
+        PinchRecognizer.prototype.touchStart = function (touch) {
+            if (this.pinchTouches.length < 2) {
+                if (this.pinchTouches.push(touch) == 2) {
+                    this.referenceDistance = this.currentPinchDistance();
+                    this._offsetScale *= this._scale;
+                    this._scale = 1;
                 }
             }
         };
 
-        /**
-         *
-         * @param event
-         * @protected
-         */
-        PinchRecognizer.prototype.touchMove = function (event) {
-            GestureRecognizer.prototype.touchMove.call(this, event);
-
-            if (this.touchIds.length == 2) {
+        // Documented in superclass.
+        PinchRecognizer.prototype.touchMove = function (touch) {
+            if (this.pinchTouches.length == 2) {
                 if (this.state == WorldWind.POSSIBLE) {
-                    if (this.shouldRecognizeTouches()) {
-                        this.transitionToState(WorldWind.BEGAN);
+                    if (this.shouldRecognize()) {
+                        this.state = WorldWind.BEGAN;
                     }
                 } else if (this.state == WorldWind.BEGAN || this.state == WorldWind.CHANGED) {
-                    this.transitionToState(WorldWind.CHANGED);
+                    var distance = this.currentPinchDistance(),
+                        newScale = Math.abs(distance / this.referenceDistance),
+                        w = this.weight;
+                    this._scale = this._scale * (1 - w) + newScale * w;
+                    this.state = WorldWind.CHANGED;
                 }
             }
         };
 
-        /**
-         *
-         * @param event
-         * @protected
-         */
-        PinchRecognizer.prototype.touchEndOrCancel = function (event) {
-            GestureRecognizer.prototype.touchEndOrCancel.call(this, event);
-
-            // Remove touch identifier entries for the touches that ended or cancelled.
-            for (var i = 0, count = event.changedTouches.length; i < count; i++) {
-                var touch = event.changedTouches.item(i),
-                    index = this.touchIds.indexOf(touch.identifier);
-                if (index != -1) {
-                    this.touchIds.splice(index, 1);
-                }
+        // Documented in superclass.
+        PinchRecognizer.prototype.touchEnd = function (touch) {
+            var index = this.pinchTouches.indexOf(touch);
+            if (index != -1) {
+                this.pinchTouches.splice(index, 1);
             }
 
-            if (event.targetTouches.length == 0) { // last touches ended
-                if (this.state == WorldWind.BEGAN || this.state == WorldWind.CHANGED) {
-                    this.transitionToState(event.type == "touchend" ? WorldWind.ENDED : WorldWind.CANCELLED);
+            // Transition to the ended state if this was the last touch.
+            if (this.touchCount == 0) { // last touch ended
+                if (this.state == WorldWind.POSSIBLE) {
+                    this.state = WorldWind.FAILED;
+                } else if (this.state == WorldWind.BEGAN || this.state == WorldWind.CHANGED) {
+                    this.state = WorldWind.ENDED;
                 }
             }
         };
 
-        /**
-         * @protected
-         */
-        PinchRecognizer.prototype.touchesStarted = function () {
-            var index0 = this.indexOfTouch(this.touchIds[0]),
-                index1 = this.indexOfTouch(this.touchIds[1]);
+        // Documented in superclass.
+        PinchRecognizer.prototype.touchCancel = function (touch) {
+            var index = this.pinchTouches.indexOf(touch);
+            if (index != -1) {
+                this.pinchTouches.splice(index, 1);
+            }
 
-            this.referenceDistance = this.touchDistance(index0, index1);
-            this._offsetScale *= this._scale;
+            // Transition to the cancelled state if this was the last touch.
+            if (this.touchCount == 0) {
+                if (this.state == WorldWind.POSSIBLE) {
+                    this.state = WorldWind.FAILED;
+                } else if (this.state == WorldWind.BEGAN || this.state == WorldWind.CHANGED) {
+                    this.state = WorldWind.CANCELLED;
+                }
+            }
+        };
+
+        // Documented in superclass.
+        PinchRecognizer.prototype.prepareToRecognize = function () {
+            this.referenceDistance = this.currentPinchDistance();
             this._scale = 1;
         };
 
-        /**
-         *
-         * @returns {boolean}
-         * @protected
-         */
-        PinchRecognizer.prototype.shouldRecognizeTouches = function () {
-            var index0 = this.indexOfTouch(this.touchIds[0]),
-                index1 = this.indexOfTouch(this.touchIds[1]),
-                distance = this.touchDistance(index0, index1);
+        // Intentionally not documented.
+        PinchRecognizer.prototype.shouldRecognize = function () {
+            var distance = this.currentPinchDistance();
 
-            return Math.abs(distance - this.referenceDistance) > this.threshold
+            return Math.abs(distance - this.referenceDistance) > this.interpretThreshold
         };
 
-        /**
-         * @protected
-         */
-        PinchRecognizer.prototype.gestureBegan = function () {
-            var index0 = this.indexOfTouch(this.touchIds[0]),
-                index1 = this.indexOfTouch(this.touchIds[1]);
+        // Intentionally not documented.
+        PinchRecognizer.prototype.currentPinchDistance = function () {
+            var touch0 = this.pinchTouches[0],
+                touch1 = this.pinchTouches[1],
+                dx = touch0.clientX - touch1.clientX,
+                dy = touch0.clientY - touch1.clientY;
 
-            this.referenceDistance = this.touchDistance(index0, index1);
-            this._scale = 1;
-        };
-
-        /**
-         * @protected
-         */
-        PinchRecognizer.prototype.gestureChanged = function () {
-            var index0 = this.indexOfTouch(this.touchIds[0]),
-                index1 = this.indexOfTouch(this.touchIds[1]),
-                distance = this.touchDistance(index0, index1),
-                newScale = Math.abs(distance / this.referenceDistance),
-                w = this.weight;
-
-            this._scale = this._scale * (1 - w) + newScale * w;
-        };
-
-        /**
-         *
-         * @param indexA
-         * @param indexB
-         * @returns {number}
-         * @protected
-         */
-        PinchRecognizer.prototype.touchDistance = function (indexA, indexB) {
-            var pointA = this.touches[indexA].clientLocation,
-                pointB = this.touches[indexB].clientLocation;
-            return pointA.distanceTo(pointB);
+            return Math.sqrt(dx * dx + dy * dy);
         };
 
         return PinchRecognizer;

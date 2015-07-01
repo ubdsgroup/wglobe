@@ -77,7 +77,7 @@ public class Upload extends HttpServlet {
 				}
 				InputStream is = item.openStream();
 				S3Uploader aws = new S3Uploader();
-				url = aws.putObject(is, name);
+				url = aws.putObjectwithInputStream(is, name);
 
 				NetCDFReader netcdfR = new NetCDFReader();
 				htmlstr = netcdfR.getVariable(url);

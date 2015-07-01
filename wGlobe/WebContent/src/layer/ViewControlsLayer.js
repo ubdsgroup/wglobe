@@ -4,7 +4,7 @@
  */
 /**
  * @exports ViewControlsLayer
- * @version $Id: ViewControlsLayer.js 3091 2015-05-14 22:13:30Z dcollins $
+ * @version $Id: ViewControlsLayer.js 3142 2015-06-03 15:37:54Z tgaskins $
  */
 define([
         '../geom/Angle',
@@ -577,9 +577,11 @@ define([
             for (var i = 0; i < this.controls.length; i++) {
                 control = this.controls[i];
 
-                if (x >= control.screenOffset.x && x <= (control.screenOffset.x + control.size)
-                && y >= control.screenOffset.y && y <= (control.screenOffset.y + control.size)) {
-                    return control;
+                if (control.enabled) {
+                    if (x >= control.screenOffset.x && x <= (control.screenOffset.x + control.size)
+                        && y >= control.screenOffset.y && y <= (control.screenOffset.y + control.size)) {
+                        return control;
+                    }
                 }
             }
 

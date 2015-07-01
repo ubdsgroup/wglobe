@@ -4,7 +4,7 @@
  */
 /**
  * @exports ShowTessellationLayer
- * @version $Id: ShowTessellationLayer.js 2950 2015-03-31 21:46:14Z dcollins $
+ * @version $Id: ShowTessellationLayer.js 3136 2015-06-02 17:14:24Z dcollins $
  */
 define([
         '../shaders/BasicProgram',
@@ -79,7 +79,7 @@ define([
                 terrainTile;
 
             try {
-                program = dc.findAndBindProgram(gl, BasicProgram);
+                program = dc.findAndBindProgram(BasicProgram);
                 tessellator.beginRendering(dc);
 
                 for (var i = 0, len = surfaceGeometry.length; i < len; i++) {
@@ -94,7 +94,7 @@ define([
 
             } finally {
                 tessellator.endRendering(dc);
-                dc.bindProgram(gl, null);
+                dc.bindProgram(null);
             }
         };
 

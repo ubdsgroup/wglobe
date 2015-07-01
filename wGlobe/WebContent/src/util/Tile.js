@@ -4,7 +4,7 @@
  */
 /**
  * @exports Tile
- * @version $Id: Tile.js 3016 2015-04-14 17:09:37Z dcollins $
+ * @version $Id: Tile.js 3125 2015-05-29 14:43:25Z tgaskins $
  */
 define([
         '../error/ArgumentError',
@@ -280,7 +280,7 @@ define([
             var childList = cache ? cache.entryForKey(this.tileKey) : null;
             if (!childList) {
                 childList = this.subdivide(level, tileFactory);
-                if (childList) {
+                if (childList && cache) {
                     cache.putEntry(this.tileKey, childList, 4 * childList[0].size());
                 }
             }
