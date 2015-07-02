@@ -180,31 +180,12 @@
 			return false;
 		});
 		
-		$(".vars").on('click', function(e) {
-			var textUrl = $().text();
-
-			$('body').loading('start');
-			$.ajax({
-				url : 'Index',
-				type : 'POST',
-				data : {
-					servers : selectedValue,
-					textUrl : textUrl
-				},
-				success : function(data) {
-					$("#data").css("display", "block");
-					$('#data').html(data);
-					$('#tree1').treed();
-					$(".ball").css("display", "none");
-					$(".ball1").css("display", "none");
-					$('body').loading('stop');
-				}
-			});
-			return false;
-		});
 		
-		function getMeasure(e) {
-			var variable = $(e).text();
+		
+		$(document.body).on('click', '.vars' ,function(){
+			var variable = $(this).text();
+			alert(variable);
+			
 			$('body').loading('start');
 			$.ajax({
 				url : 'Variable',
@@ -219,7 +200,10 @@
 					$('body').loading('stop');
 				}
 			});
-		}
+		});
+		/* function getMeasure(e) {
+			
+		} */
 		
 
 		$.fn
