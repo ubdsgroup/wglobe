@@ -210,7 +210,7 @@ public class NetCDFReader {
 				List<GridDatatype> lGrid = gridDataset.getGrids();
 				for (int i = 0; i < lGrid.size(); i++) {
 					String name = lGrid.get(i).getName();
-					out += "<li><a>"
+					out += "<li><a class=\"vars\" onclick=\"getMeasure(this)\">"
 							+ name + "</a></li>";
 				}
 
