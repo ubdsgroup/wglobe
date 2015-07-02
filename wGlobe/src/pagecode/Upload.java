@@ -58,6 +58,7 @@ public class Upload extends HttpServlet {
 		// TODO Auto-generated method stub
 		String htmlstr = "";
 		String url = "";
+	
 		if (ServletFileUpload.isMultipartContent(request)) {
 			DiskFileItemFactory factory = new DiskFileItemFactory();
 			ServletFileUpload upload = new ServletFileUpload(factory);
