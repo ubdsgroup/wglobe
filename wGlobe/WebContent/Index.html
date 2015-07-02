@@ -181,8 +181,30 @@
 		});
 		
 		$(".vars").on('click', function(e) {
-			var textUrl = $(e).text();
+			var textUrl = $().text();
 
+			$('body').loading('start');
+			$.ajax({
+				url : 'Index',
+				type : 'POST',
+				data : {
+					servers : selectedValue,
+					textUrl : textUrl
+				},
+				success : function(data) {
+					$("#data").css("display", "block");
+					$('#data').html(data);
+					$('#tree1').treed();
+					$(".ball").css("display", "none");
+					$(".ball1").css("display", "none");
+					$('body').loading('stop');
+				}
+			});
+			return false;
+		});
+		
+		function getMeasure(e) {
+			var variable = $(e).text();
 			$('body').loading('start');
 			$.ajax({
 				url : 'Variable',
@@ -197,8 +219,8 @@
 					$('body').loading('stop');
 				}
 			});
-		});
-	
+		}
+		
 
 		$.fn
 				.extend({

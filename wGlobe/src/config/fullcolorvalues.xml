@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--A Sample Color Scheme For NetCDF Data-->
+<!--
+   Copyright (c) 2011. This product includes software produced by UT-Battelle, LLC
+   under Contract No. DE-AC05-00OR22725 with the Department of Energy.
+
+   UT-Battelle, LLC and the government make no representations and disclaim all warranties,
+   both expressed and implied. There are not expressed or implied warranties of
+   merchantability or fitness for a particular purpose, or that the use of the software
+   will not infringe any patent, copyright, trademark, or other proprietary rights, or that
+   the software will accomplish the intended results or that the software or its use will
+   not result in injury or damage. The user assumes responsibility for all liabilities,
+   penalties, fines, claims, causes of action, and costs and expenses, caused by,
+   resulting from, or arising out of, in whole or in part the use, storage or
+   disposal of the software.
+ -->
+<!--$Id$-->
+<colors>
+    <color red = "0" blue = "0" green = "31"/>
+    <color red = "0" blue = "0" green = "47"/>
+    <color red = "0" blue = "0" green = "63"/>
+    <color red = "0" blue = "0" green = "79"/>
+    <color red = "0" blue = "0" green = "95"/>
+    <color red = "0" blue = "0" green = "111"/>
+    <color red = "0" blue = "0" green = "127"/>
+    <color red = "0" blue = "0" green = "143"/>
+    <color red = "0" blue = "0" green = "159"/>
+    <color red = "0" blue = "0" green = "175"/>
+    <color red = "0" blue = "0" green = "191"/>
+    <color red = "0" blue = "0" green = "207"/>
+    <color red = "0" blue = "0" green = "223"/>
+    <color red = "0" blue = "0" green = "239"/>
+    <color red = "0" blue = "0" green = "255"/>
+    <color red = "0" blue = "15" green = "255"/>
+    <color red = "0" blue = "31" green = "255"/>
+    <color red = "0" blue = "47" green = "255"/>
+    <color red = "0" blue = "63" green = "255"/>
+    <color red = "0" blue = "79" green = "255"/>
+    <color red = "0" blue = "95" green = "255"/>
+    <color red = "0" blue = "111" green = "255"/>
+    <color red = "0" blue = "127" green = "255"/>
+    <color red = "0" blue = "143" green = "255"/>
+    <color red = "0" blue = "159" green = "255"/>
+    <color red = "0" blue = "175" green = "255"/>
+    <color red = "0" blue = "191" green = "255"/>
+    <color red = "0" blue = "207" green = "255"/>
+    <color red = "0" blue = "223" green = "255"/>
+    <color red = "0" blue = "239" green = "255"/>
+    <color red = "0" blue = "255" green = "255"/>
+    <color red = "15" blue = "255" green = "239"/>
+    <color red = "31" blue = "255" green = "223"/>
+    <color red = "47" blue = "255" green = "207"/>
+    <color red = "63" blue = "255" green = "191"/>
+    <color red = "79" blue = "255" green = "175"/>
+    <color red = "95" blue = "255" green = "159"/>
+    <color red = "111" blue = "255" green = "143"/>
+    <color red = "127" blue = "255" green = "127"/>
+    <color red = "143" blue = "255" green = "111"/>
+    <color red = "159" blue = "255" green = "95"/>
+    <color red = "175" blue = "255" green = "79"/>
+    <color red = "191" blue = "255" green = "63"/>
+    <color red = "207" blue = "255" green = "47"/>
+    <color red = "223" blue = "255" green = "31"/>
+    <color red = "239" blue = "255" green = "15"/>
+    <color red = "255" blue = "255" green = "0"/>
+    <color red = "255" blue = "239" green = "0"/>
+    <color red = "255" blue = "223" green = "0"/>
+    <color red = "255" blue = "207" green = "0"/>
+    <color red = "255" blue = "191" green = "0"/>
+    <color red = "255" blue = "175" green = "0"/>
+    <color red = "255" blue = "159" green = "0"/>
+    <color red = "255" blue = "143" green = "0"/>
+    <color red = "255" blue = "127" green = "0"/>
+    <color red = "255" blue = "111" green = "0"/>
+    <color red = "255" blue = "95" green = "0"/>
+    <color red = "255" blue = "79" green = "0"/>
+    <color red = "255" blue = "63" green = "0"/>
+    <color red = "255" blue = "47" green = "0"/>
+    <color red = "255" blue = "31" green = "0"/>
+    <color red = "255" blue = "15" green = "0"/>
+    <color red = "255" blue = "0" green = "0"/>
+    <color red = "239" blue = "0" green = "0"/>
+    <color red = "223" blue = "0" green = "0"/>
+    <color red = "207" blue = "0" green = "0"/>
+    <color red = "191" blue = "0" green = "0"/>
+    <color red = "175" blue = "0" green = "0"/>
+    <color red = "159" blue = "0" green = "0"/>
+    <color red = "143" blue = "0" green = "0"/>
+    <color red = "127" blue = "0" green = "0"/>
+    <color red = "111" blue = "0" green = "0"/>
+    <color red = "95" blue = "0" green = "0"/>
+    <color red = "79" blue = "0" green = "0"/>
+    <color red = "63" blue = "0" green = "0"/>
+    <color red = "47" blue = "0" green = "0"/>
+</colors>
