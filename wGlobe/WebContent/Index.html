@@ -21,12 +21,9 @@
 	type="text/javascript"></script>
 <script
 	src="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/js/bootstrap.min.js"></script>
-
-<link rel="stylesheet" href="CSS/Site.css">
 <script data-main="Index"
 	src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.1.17/require.min.js"></script>
-	<script type="text/javascript">
-	
+<link rel="stylesheet" href="CSS/Site.css">
 </head>
 <body>
 	<div class="container">
@@ -93,7 +90,7 @@
 				<h4 class="whitetext">Projection</h4>
 				<div class="dropdown" id="projectionDropdown"></div>
 				<br>
-				
+
 				<div id="data" class="col-md-12 well" style="display: block">
 
 				</div>
@@ -113,20 +110,23 @@
 					</div>
 				</div>
 			</div>
-			<div class="col-sm-12 well margintop30" id="variablepanel" style="display: none">
+			<div class="col-sm-12 well margintop30" id="variablepanel"
+				style="display: none">
 				<div id="variableError" class="redtext text-center"></div>
-				<div id="variabledialog" class="row margintop30">
-					
-				</div>
-				
-					<button id="popupsubmit" class="blacktext margintop10 pull-right" type="submit" name="popupsubmit">Submit</button>
-					
+				<div id="variabledialog" class="row margintop30"></div>
+
+				<button id="popupsubmit" class="blacktext margintop10 pull-right"
+					type="submit" name="popupsubmit">Submit</button>
+			
 			</div>
+
 		</div>
 	</div>
-	
+
 	<script src="JS/jquery-1.11.3.min.js" type="text/javascript"></script>
 	<script src="JS/jquery.loading.min.js" type="text/javascript"></script>
+
+	<script type="text/javascript">
 	
 		$("#servers").change(function() {
 			//get the selected value
