@@ -194,12 +194,14 @@
 					variable : variable
 				},
 				success : function(data) {
+					alert(data);
 					$("#variabledialog").css("display", "block");
 					$("#variablepanel").css("display", "block");
 					$('#variabledialog').html(data);
 					$('body').loading('stop');
 				}
 			});
+			return false;
 		});
 		/* function getMeasure(e) {
 			

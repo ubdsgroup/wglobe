@@ -10,6 +10,7 @@ import java.util.List;
 import com.amazonaws.AmazonClientException;
 import com.amazonaws.AmazonServiceException;
 import com.amazonaws.HttpMethod;
+import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.auth.profile.ProfileCredentialsProvider;
 import com.amazonaws.services.kms.model.ListKeysRequest;
 import com.amazonaws.services.s3.AmazonS3;
@@ -28,7 +29,8 @@ public class S3Uploader {
 	private static String keyName;
 
 	// ~/.aws/credentials
-	AmazonS3 s3client = new AmazonS3Client(new ProfileCredentialsProvider());
+	BasicAWSCredentials awsCreds = new BasicAWSCredentials("AKIAJ4L6POF6C5HA4AQQ", "wmHk8K6I9qIiJKQyxCUikO++7TU6w4fTyKDZXonO");
+	AmazonS3 s3client = new AmazonS3Client(awsCreds);
 
 	public String putObjectwithInputStream(InputStream is, String filename) {
 		String url = "";
