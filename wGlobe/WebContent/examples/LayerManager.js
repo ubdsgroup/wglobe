@@ -24,16 +24,16 @@ define(function () {
         this.roundGlobe = this.wwd.globe;
 
         this.createProjectionList();
-        $("#projectionDropdown").find("li").on("click", function (e) {
+        $("#projectionDropdown").find(" li").on("click", function (e) {
             thisExplorer.onProjectionClick(e);
         });
 
         this.synchronizeLayerList();
 
-        $("#variablepanel").find("button").on("click", function (e) {
-        	 thisExplorer.onLayerClick($(this));
+        $("#layerList").find("button").on("click", function (e) {
+            thisExplorer.onLayerClick($(this));
         });
-        
+
         $("#searchBox").find("button").on("click", function (e) {
             thisExplorer.onSearchButton(e);
         });
@@ -43,42 +43,14 @@ define(function () {
         $("#searchText").on("keypress", function (e) {
             thisExplorer.onSearchTextKeyPress($(this), e);
         });
-        
-        $("#variablepanel").find("button").on("click", function (e) {
-            thisExplorer.onLayerClick($(this));
-        });
-        
+
         //
         //this.wwd.redrawCallbacks.push(function (worldWindow) {
         //    thisExplorer.updateVisibilityState(worldWindow);
         //});
     };
-    
-    LayerManager.prototype.onLayerClick = function (layerButton) {
-    	var variable = $('#variable').val();
-    	var from = parseInt($( "#from" ).val());
-    	var to = parseInt($( "#to" ).val());
-    	
-    	if(from == to){
-    		$('#variableError').html("Invalid. Date cannot be the same.");
-    	}
-    	else if(from > to){
-    		$('#variableError').html("Invalid. Please try again with different dates.");
-    	}
-    	else{
-    		var surfaceImage1 = new WorldWind.SurfaceImage(new WorldWind.Sector(-90, 90, -180, 180),
-            "https://s3-us-west-2.amazonaws.com/wglobe/netcdfImages/" + variable + "/" + variable + "_" + from + ".png");
-    		
-    		var surfaceImageLayer = new WorldWind.RenderableLayer();
-            surfaceImageLayer.displayName = "Surface Images";
-            surfaceImageLayer.addRenderable(surfaceImage1);
-            this.wwd.addLayer(surfaceImageLayer);
-            this.wwd.redraw();
-    	}
-    };
 
     LayerManager.prototype.onProjectionClick = function (event) {
-    	
         var projectionName = event.target.innerText || event.target.innerHTML;
         $("#projectionDropdown").find("button").html(projectionName + ' <span class="caret"></span>');
 
@@ -117,44 +89,15 @@ define(function () {
         this.wwd.redraw();
     };
 
-//    LayerManager.prototype.onLayerClick = function (layerButton) {
-//        var layerName = layerButton.text();
-//
-//        // Update the layer state for the selected layer.
-//        for (var i = 0, len = this.wwd.layers.length; i < len; i++) {
-//            var layer = this.wwd.layers[i];
-//            if (layer.hide) {
-//                continue;
-//            }
-//            
-//            if(layer.displayName == "Surface Images"){
-//            	layer.enabled = true;
-//            }
-//
-//            if (layer.displayName === layerName) {
-//                layer.enabled = !layer.enabled;
-//                if (layer.enabled) {
-//                    layerButton.addClass("active");
-//                } else {
-//                    layerButton.removeClass("active");
-//                }
-//                this.wwd.redraw();
-//            }
-//        }
-//    };
-
-    LayerManager.prototype.onMeasureButtonClick = function (layerButton) {
+    LayerManager.prototype.onLayerClick = function (layerButton) {
         var layerName = layerButton.text();
 
-        
         // Update the layer state for the selected layer.
         for (var i = 0, len = this.wwd.layers.length; i < len; i++) {
             var layer = this.wwd.layers[i];
             if (layer.hide) {
                 continue;
             }
-            
-            if(layer.displayName == "Surface Ima")
 
             if (layer.displayName === layerName) {
                 layer.enabled = !layer.enabled;
@@ -167,7 +110,6 @@ define(function () {
             }
         }
     };
-    
 
     LayerManager.prototype.synchronizeLayerList = function () {
         var layerListItem = $("#layerList");
@@ -241,14 +183,13 @@ define(function () {
     };
 
     LayerManager.prototype.onSearchButton = function (event) {
-        this.performSearch($("#searchText")[0].value);
+        this.performSearch($("#searchText")[0].value)
     };
-
 
     LayerManager.prototype.onSearchTextKeyPress = function (searchInput, event) {
         if (event.keyCode === 13) {
             searchInput.blur();
-            this.performSearch($("#searchText")[0].value);
+            this.performSearch($("#searchText")[0].value)
         }
     };
 

@@ -95,7 +95,6 @@ define(function () {
             surfaceImageLayer.addRenderable(surfaceImage1);
             this.wwd.addLayer(surfaceImageLayer);
             
-            this.wwd.redraw();
     		
     	}
     	
@@ -105,22 +104,22 @@ define(function () {
     	//        var layerName = layerButton.text();
 //
 //        // Update the layer state for the selected layer.
-//        for (var i = 0, len = this.wwd.layers.length; i < len; i++) {
-//            var layer = this.wwd.layers[i];
-//            if (layer.hide) {
-//                continue;
-//            }
-//
-//            if (layer.displayName === layerName) {
-//                layer.enabled = !layer.enabled;
-//                if (layer.enabled) {
-//                    layerButton.addClass("active");
-//                } else {
-//                    layerButton.removeClass("active");
-//                }
-//                this.wwd.redraw();
-//            }
-//        }
+        for (var i = 0, len = this.wwd.layers.length; i < len; i++) {
+            var layer = this.wwd.layers[i];
+            if (layer.hide) {
+                continue;
+            }
+
+            if (layer.displayName === layerName) {
+                layer.enabled = !layer.enabled;
+                if (layer.enabled) {
+                    layerButton.addClass("active");
+                } else {
+                    layerButton.removeClass("active");
+                }
+                this.wwd.redraw();
+            }
+        }
     };
 //
 //    LayerManager.prototype.onMeasureButtonClick = function (layerButton) {

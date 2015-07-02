@@ -57,9 +57,7 @@ public class NetCDFReader {
 
 			if (check) {
 				htmlstr = getTimeDimensionbyVariable(variable);
-				htmlstr = "<p class=\"redtext\">error: can get the variable but dont see variable on s3 </p>";
 			} else {
-				htmlstr = "<p class=\"redtext\">error: cant get the variable</p>";
 				ArrayList<File> fileList = new ArrayList<File>();
 				GeoGrid grid = gridDataset.findGridByName(variable);
 				int numLatitudes = grid.getYDimension().getLength();
@@ -246,7 +244,6 @@ public class NetCDFReader {
 		GeoGrid grid = gridDataset.findGridByName(variable);
 		GridCoordSystem coordSystem = grid.getCoordinateSystem();
 		if (grid.getTimeDimensionIndex() != -1) {
-
 			CoordinateAxis axis = coordSystem.getTimeAxis();
 			CoordinateAxis1DTime taxis;
 			if (axis instanceof CoordinateAxis1D) {

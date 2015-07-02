@@ -61,7 +61,7 @@ requirejs(['./src/WorldWind',
           // Create a layer manager for controlling layer visibility.
           var layerManger = new LayerManager(wwd);
           
-          var wGlobeLayerManager = new wGlobeLayerManager(wwd);
+//          var wGlobeLayerManager = new wGlobeLayerManager(wwd);
 
           // Create a coordinate controller to update the coordinate overlay elements.
           var coordinateController = new CoordinateController(wwd);
