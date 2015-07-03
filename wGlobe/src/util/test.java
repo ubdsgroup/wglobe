@@ -1,186 +1,125 @@
 package util;
 
+import gov.nasa.worldwind.WorldWind;
 import gov.nasa.worldwind.avlist.AVKey;
 import gov.nasa.worldwind.avlist.AVList;
 import gov.nasa.worldwind.avlist.AVListImpl;
 import gov.nasa.worldwind.data.BufferedImageRaster;
+import gov.nasa.worldwind.data.DataRaster;
+import gov.nasa.worldwind.data.DataRasterReader;
+import gov.nasa.worldwind.data.DataRasterReaderFactory;
 import gov.nasa.worldwind.formats.tiff.GeotiffWriter;
-import gov.nasa.worldwind.geom.Angle;
 import gov.nasa.worldwind.geom.Sector;
-import gov.nasa.worldwindx.applications.worldwindow.util.Util;
-import ucar.ma2.*;
-import ucar.nc2.dataset.NetcdfDataset;
-import ucar.nc2.dt.grid.GeoGrid;
-import ucar.nc2.dt.grid.GridCoordSys;
-import ucar.nc2.dt.grid.GridDataset;
-import ucar.unidata.geoloc.LatLonRect;
 
-import javax.xml.stream.XMLStreamException;
-import java.awt.image.BufferedImage;
-import java.awt.image.DataBufferInt;
-import java.io.*;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipOutputStream;
-import java.awt.Font;
-import java.awt.FontMetrics;
-import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
-import java.io.OutputStreamWriter;
-import java.net.HttpURLConnection;
-import java.net.URL;
-
-import javax.imageio.ImageIO;
-
-import com.amazonaws.AmazonClientException;
-import com.amazonaws.AmazonServiceException;
-import com.amazonaws.HttpMethod;
-import com.amazonaws.auth.profile.ProfileCredentialsProvider;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3Client;
-import com.amazonaws.services.s3.model.GeneratePresignedUrlRequest;
 
 public class test {
 
-	 public static void main(String [] args)
-	    {
-	        String filename = "/Users/ERAN/Downloads/air.mon.mean.nc";
-	        NetcdfDataset dataset;
-	        Set<NetcdfDataset.Enhance> enhanceSet = new HashSet<NetcdfDataset.Enhance>();
-	        enhanceSet.add(NetcdfDataset.Enhance.CoordSystems);
-	        enhanceSet.add(NetcdfDataset.Enhance.ScaleMissingDefer);
-	        String paramName = "air";
-	        String dirname = "/Users/ERAN/Desktop/";
-	        ArrayList<File> fileList = new ArrayList<File>();
-	        try {
-	            dataset = NetcdfDataset.openDataset(filename, enhanceSet, -1, null, null);
-	            GridDataset gridDataset = new GridDataset(dataset);
-	            GeoGrid grid = gridDataset.findGridByName(paramName);
-	            int numLatitudes = grid.getYDimension().getLength();
-	            int numLongitudes = grid.getXDimension().getLength();
-	            for(int t = 0; t < grid.getTimeDimension().getLength();t++) {
-	                ArrayFloat.D2 array = (ArrayFloat.D2) (grid.readDataSlice(t, -1, -1, -1)).flip(0);
-	                MAMath.MinMax minMax = grid.getMinMaxSkipMissingData(array);
-	                //save this as a geotiff
-	                NetcdfColorMap ncColormap = createColorMap(minMax, paramName);
+	public static void main(String[] args) {
+		String imagepath = "/Users/ERAN/Desktop/wGlobe/tesdata/craterlake-imagery-30m.tif";
+		importTiff(imagepath);
+	}
 
-	                BufferedImage bufferedImage = new BufferedImage(numLongitudes, numLatitudes, BufferedImage.TYPE_INT_ARGB);
-	                int[] pixelArray = ((DataBufferInt) bufferedImage.getRaster().getDataBuffer()).getData();
-	                int cnt = 0;
-	                for (int i = 0; i < numLatitudes; i++) {
-	                    for (int j = 0; j < numLongitudes; j++) {
-	                        float key = 0;
-	                        try {
-	                            key = array.get(i, j);
-	                        } catch (ArrayIndexOutOfBoundsException e1) {
-	                            e1.printStackTrace();
-	                        }
-	                        if (!Float.isNaN(key) && !Float.isInfinite(key))
-	                            pixelArray[cnt] = ncColormap.getColor((double) key).getRGB();
-	                        cnt++;
-	                    }
-	                }
-	                GridCoordSys gcs = (GridCoordSys) grid.getCoordinateSystem();
-	                LatLonRect rect = gcs.getLatLonBoundingBox();
-	                Sector sector = new Sector(Angle.fromDegrees(rect.getLatMin()), Angle.fromDegrees(rect.getLatMax()),
-	                        Angle.fromDegrees(rect.getLonMin()), Angle.fromDegrees(rect.getLonMax()));
+	private static void writeImageToFile(Sector sector, BufferedImage image,
+			File gtFile) throws IOException {
+		AVList params = new AVListImpl();
 
-	                String filepart = paramName+"_"+t+".tiff";
-	                File f = new File(dirname+filepart);
-	                fileList.add(f);
-	                writeImageToFile(sector, bufferedImage, f);
-	                System.out.println("Image generated for time slice #"+t);
-	            }
-	            System.out.println("Zipping archive");
-	            writeZipFile(new File(dirname),fileList);
-	        }
-	        catch (Exception e)
-	        {
-	            System.err.println("Not found"+e);
-	            e.printStackTrace();
-	        }
-	    }
+		params.setValue(AVKey.SECTOR, sector);
+		params.setValue(AVKey.COORDINATE_SYSTEM,
+				AVKey.COORDINATE_SYSTEM_GEOGRAPHIC);
+		params.setValue(AVKey.PIXEL_FORMAT, AVKey.IMAGE);
+		params.setValue(AVKey.BYTE_ORDER, AVKey.BIG_ENDIAN);
 
-	    private static NetcdfColorMap createColorMap(MAMath.MinMax minMax, String variableName) {
-	        NetcdfColorMap colormap;
-	        try {
-	            colormap = NetcdfColorMap.createColorMap("rgb_"+variableName,(float) minMax.min, (float) minMax.max,NetcdfColorMap.DEFAULT_COLORMAP_LOCATION);
-	            return colormap;
-	        } catch (XMLStreamException e) {
-	            Util.getLogger().severe("Could not create color map");
-	            return null;
-	        }
-	    }
+		GeotiffWriter writer = new GeotiffWriter(gtFile);
+		try {
+			writer.write(BufferedImageRaster.wrapAsGeoreferencedRaster(image,
+					params));
+		} finally {
+			writer.close();
+		}
+	}
 
-	    public static void writeZipFile(File directoryToZip, List<File> fileList) {
+	public static void importTiff(String imagepath) {
+		try {
 
-	        try {
-	            FileOutputStream fos = new FileOutputStream(directoryToZip.getName() + ".zip");
-	            ZipOutputStream zos = new ZipOutputStream(fos);
+			// Read the data and save it in a temp file.
+			// File sourceFile = ExampleUtil.saveResourceToTempFile(imagepath,
+			// ".tif");
+			File sourceFile = new File(imagepath);
+			// Create a raster reader to read this type of file. The reader is
+			// created from the currently
+			// configured factory. The factory class is specified in the
+			// Configuration, and a different one can be
+			// specified there.
+			DataRasterReaderFactory readerFactory = (DataRasterReaderFactory) WorldWind
+					.createConfigurationComponent(AVKey.DATA_RASTER_READER_FACTORY_CLASS_NAME);
+			DataRasterReader reader = readerFactory.findReaderFor(sourceFile,
+					null);
 
-	            for (File file : fileList) {
-	                if (!file.isDirectory()) { // we only zip files, not directories
-	                    addToZip(directoryToZip, file, zos);
-	                }
-	            }
+			// Before reading the raster, verify that the file contains imagery.
+			AVList metadata = reader.readMetadata(sourceFile, null);
+			if (metadata == null
+					|| !AVKey.IMAGE.equals(metadata
+							.getStringValue(AVKey.PIXEL_FORMAT)))
+				throw new Exception("Not an image file.");
 
-	            zos.close();
-	            fos.close();
-	        } catch (FileNotFoundException e) {
-	            e.printStackTrace();
-	        } catch (IOException e) {
-	            e.printStackTrace();
-	        }
-	    }
+			// Read the file into the raster. read() returns potentially several
+			// rasters if there are multiple
+			// files, but in this case there is only one so just use the first
+			// element of the returned array.
+			DataRaster[] rasters = reader.read(sourceFile, null);
+			if (rasters == null || rasters.length == 0)
+				throw new Exception("Can't read the image file.");
 
-	    public static void addToZip(File directoryToZip, File file, ZipOutputStream zos) throws FileNotFoundException,
-	            IOException {
+			DataRaster raster = rasters[0];
 
-	        FileInputStream fis = new FileInputStream(file);
+			// Determine the sector covered by the image. This information is in
+			// the GeoTIFF file or auxiliary
+			// files associated with the image file.
+			final Sector sector = (Sector) raster.getValue(AVKey.SECTOR);
+			if (sector == null)
+				throw new Exception("No location specified with image.");
 
-	        // we want the zipEntry's path to be a relative path that is relative
-	        // to the directory being zipped, so chop off the rest of the path
-	        String zipFilePath = file.getCanonicalPath().substring(directoryToZip.getCanonicalPath().length() + 1,
-	                file.getCanonicalPath().length());
-	        System.out.println("Writing '" + zipFilePath + "' to zip file");
-	        ZipEntry zipEntry = new ZipEntry(zipFilePath);
-	        zos.putNextEntry(zipEntry);
+			// Request a sub-raster that contains the whole image. This step is
+			// necessary because only sub-rasters
+			// are reprojected (if necessary); primary rasters are not.
+			int width = raster.getWidth();
+			int height = raster.getHeight();
 
-	        byte[] bytes = new byte[1024];
-	        int length;
-	        while ((length = fis.read(bytes)) >= 0) {
-	            zos.write(bytes, 0, length);
-	        }
+			// getSubRaster() returns a sub-raster of the size specified by
+			// width and height for the area indicated
+			// by a sector. The width, height and sector need not be the full
+			// width, height and sector of the data,
+			// but we use the full values of those here because we know the full
+			// size isn't huge. If it were huge
+			// it would be best to get only sub-regions as needed or install it
+			// as a tiled image layer rather than
+			// merely import it.
+			DataRaster subRaster = raster.getSubRaster(width, height, sector,
+					null);
 
-	        zos.closeEntry();
-	        fis.close();
-	    }
+			// Tne primary raster can be disposed now that we have a sub-raster.
+			// Disposal won't affect the
+			// sub-raster.
+			raster.dispose();
 
+			// Verify that the sub-raster can create a BufferedImage, then
+			// create one.
+			if (!(subRaster instanceof BufferedImageRaster))
+				throw new Exception("Cannot get BufferedImage.");
+			BufferedImage image = ((BufferedImageRaster) subRaster)
+					.getBufferedImage();
 
-	    private static void writeImageToFile(Sector sector, BufferedImage image, File gtFile)
-	            throws IOException
-	    {
-	        AVList params = new AVListImpl();
-
-	        params.setValue(AVKey.SECTOR, sector);
-	        params.setValue(AVKey.COORDINATE_SYSTEM, AVKey.COORDINATE_SYSTEM_GEOGRAPHIC);
-	        params.setValue(AVKey.PIXEL_FORMAT, AVKey.IMAGE);
-	        params.setValue(AVKey.BYTE_ORDER, AVKey.BIG_ENDIAN);
-
-	        GeotiffWriter writer = new GeotiffWriter(gtFile);
-	        try
-	        {
-	            writer.write(BufferedImageRaster.wrapAsGeoreferencedRaster(image, params));
-	        }
-	        finally
-	        {
-	            writer.close();
-	        }
-	    }
+			writeImageToFile(sector, image, new File(
+					"/Users/ERAN/Desktop/wGlobe/output/output.tiff"));
+			// The sub-raster can now be disposed. Disposal won't affect the
+			// BufferedImage.
+			subRaster.dispose();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
 
 }

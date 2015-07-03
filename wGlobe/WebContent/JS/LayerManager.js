@@ -43,7 +43,7 @@ define(function() {
 		$("#searchText").on("keypress", function(e) {
 			thisExplorer.onSearchTextKeyPress($(this), e);
 		});
-		
+
 		//
 		//this.wwd.redrawCallbacks.push(function (worldWindow) {
 		//    thisExplorer.updateVisibilityState(worldWindow);
@@ -55,6 +55,13 @@ define(function() {
 		var variable = $('#variable').val();
 		var from = parseInt($("#from").val());
 		var to = parseInt($("#to").val());
+		
+		for (var i = 0, len = this.wwd.layers.length; i < len; i++) {
+			var layer = this.wwd.layers[i];
+			if (layer.displayName == "Surface Images") {
+				this.wwd.removeLayer(layer);
+			}
+		}
 
 		if (from == to) {
 			$('#variableError').html("Invalid. Date cannot be the same.");
@@ -62,15 +69,19 @@ define(function() {
 			$('#variableError').html(
 					"Invalid. Please try again with different dates.");
 		} else {
-			var surfaceImage1 = new WorldWind.SurfaceImage(
-					new WorldWind.Sector(-90, 90, -180, 180),
-					"https://s3-us-west-2.amazonaws.com/wglobe/netcdfImages/"
-							+ variable + "/" + variable + "_" + from + ".png");
+			for (var i = from; i <= to; i++) {
+				$('#variableError').html("");
+				var surfaceImage1 = new WorldWind.SurfaceImage(
+						new WorldWind.Sector(-90, 90, -180, 180),
+						"https://s3-us-west-2.amazonaws.com/wglobe/netcdfImages/"
+								+ variable + "/" + variable + "_" + i + ".png");
 
-			var surfaceImageLayer = new WorldWind.RenderableLayer();
-			surfaceImageLayer.displayName = "Surface Images";
-			surfaceImageLayer.addRenderable(surfaceImage1);
-			this.wwd.addLayer(surfaceImageLayer);
+				var surfaceImageLayer = new WorldWind.RenderableLayer();
+				surfaceImageLayer.displayName = "Surface Images";
+				surfaceImageLayer.addRenderable(surfaceImage1);
+				this.wwd.addLayer(surfaceImageLayer);
+			}
+
 			this.wwd.redraw();
 		}
 	};

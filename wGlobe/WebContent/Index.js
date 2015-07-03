@@ -14,12 +14,10 @@
 
 requirejs(['./src/WorldWind',
            './JS/LayerManager',
-           './JS/CoordinateController',
-           './JS/wGlobeLayerManager'],
+           './JS/CoordinateController'],
         function (ww,
                 LayerManager,
-                CoordinateController,
-                wGlobeLayerManager) {
+                CoordinateController) {
           "use strict";
 
           // Tell World Wind to log only warnings and errors.
