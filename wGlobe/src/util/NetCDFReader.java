@@ -48,9 +48,9 @@ public class NetCDFReader {
 	public static GridDataset gridDataset;
 
 	public String getTimebyVariable(String variable) {
-		
+
 		String htmlstr = "";
-		
+
 		try {
 			S3Uploader s3 = new S3Uploader();
 			boolean check = s3.checkKeyExistbyVariable(variable);
@@ -60,14 +60,15 @@ public class NetCDFReader {
 			} else {
 				ArrayList<File> fileList = new ArrayList<File>();
 				GeoGrid grid = gridDataset.findGridByName(variable);
+
+				// geotiff
+				// createsubsetvariable
+
 				int numLatitudes = grid.getYDimension().getLength();
 				int numLongitudes = grid.getXDimension().getLength();
-				for (int t = 0; t < grid.getTimeDimension().getLength(); t++) {
-					ArrayFloat.D2 array = (ArrayFloat.D2) read(grid, t);
-					// (grid.readDataSlice(t,
-					// -1, -1, -1)).flip(0);
+				if (grid.getTimeDimensionIndex() < 0) {
+					ArrayFloat.D2 array = (ArrayFloat.D2) read(grid, -1);
 					MAMath.MinMax minMax = grid.getMinMaxSkipMissingData(array);
-					// save this as a geotiff
 					NetcdfColorMap ncColormap = createColorMap(minMax, variable);
 
 					BufferedImage bufferedImage = new BufferedImage(
@@ -90,24 +91,62 @@ public class NetCDFReader {
 							cnt++;
 						}
 					}
-					String filename = variable + "_" + t + ".png";
+					String filename = variable + "_0.png";
 					File f = new File(filename);
 					ImageIO.write(bufferedImage, "PNG", f);
 
 					fileList.add(f);
-					System.out.println("Image generated for time slice #" + t);
 
+				} else {
+					for (int t = 0; t < grid.getTimeDimension().getLength(); t++) {
+						ArrayFloat.D2 array = (ArrayFloat.D2) read(grid, t);
+						// (grid.readDataSlice(t,
+						// -1, -1, -1)).flip(0);
+						MAMath.MinMax minMax = grid
+								.getMinMaxSkipMissingData(array);
+						// save this as a geotiff
+						NetcdfColorMap ncColormap = createColorMap(minMax,
+								variable);
+
+						BufferedImage bufferedImage = new BufferedImage(
+								numLongitudes, numLatitudes,
+								BufferedImage.TYPE_INT_ARGB);
+						int[] pixelArray = ((DataBufferInt) bufferedImage
+								.getRaster().getDataBuffer()).getData();
+						int cnt = 0;
+						for (int i = 0; i < numLatitudes; i++) {
+							for (int j = 0; j < numLongitudes; j++) {
+								float key = 0;
+								try {
+									key = array.get(i, j);
+								} catch (ArrayIndexOutOfBoundsException e1) {
+									e1.printStackTrace();
+								}
+								if (!Float.isNaN(key) && !Float.isInfinite(key))
+									pixelArray[cnt] = ncColormap.getColor(
+											(double) key).getRGB();
+								cnt++;
+							}
+						}
+						String filename = variable + "_" + t + ".png";
+						File f = new File(filename);
+						ImageIO.write(bufferedImage, "PNG", f);
+
+						fileList.add(f);
+						System.out.println("Image generated for time slice #"
+								+ t);
+
+					}
 				}
-
-//				ArrayList<String> filestr = s3.putObjectwithFileList(variable,
-//						fileList);
-//				htmlstr = getTimeDimensionbyVariable(variable,filestr);
+				// ArrayList<String> filestr =
+				s3.putObjectwithFileList(variable, fileList);
+				htmlstr = getTimeDimensionbyVariable(variable);
 			}
 		} catch (Exception e) {
 			System.err.println("Not found" + e);
 			e.printStackTrace();
 		}
-		
+
 		return htmlstr;
 
 	}
@@ -118,7 +157,7 @@ public class NetCDFReader {
 				.getCoordinateSystem().getXHorizAxis());
 		boolean yFlip = isAxisIncreasing(grid.getCoordinateSystem(), grid
 				.getCoordinateSystem().getYHorizAxis());
-		Array array = grid.readDataSlice(t, -1, -1, -1);
+		Array array = grid.readDataSlice(t, 0, -1, -1);
 		// check if this array needs to be flipped
 		if (!xFlip)
 			array = array.flip(grid.getXDimensionIndex());
@@ -201,8 +240,7 @@ public class NetCDFReader {
 				List<GridDatatype> lGrid = gridDataset.getGrids();
 				for (int i = 0; i < lGrid.size(); i++) {
 					String name = lGrid.get(i).getName();
-					out += "<li><a class=\"vars\">"
-							+ name + "</a></li>";
+					out += "<li><a class=\"vars\">" + name + "</a></li>";
 				}
 
 			} else if (extension.endsWith("nc")) {
@@ -210,8 +248,7 @@ public class NetCDFReader {
 				List<GridDatatype> lGrid = gridDataset.getGrids();
 				for (int i = 0; i < lGrid.size(); i++) {
 					String name = lGrid.get(i).getName();
-					out += "<li><a class=\"vars\">"
-							+ name + "</a></li>";
+					out += "<li><a class=\"vars\">" + name + "</a></li>";
 				}
 
 			}
@@ -237,7 +274,9 @@ public class NetCDFReader {
 
 	public String getTimeDimensionbyVariable(String variable) {
 		String html = "<div class=\"col-md-12\"><div class=\"col-md-12\"><div id=\"time\" class=\"col-md-6\""
-				+ "style=\"display: block\"><input type=\"hidden\" id=\"variable\" name=\"variable\" value=\"" + variable + "\"><fieldset class=\"scheduler-border\"><legend class=\""
+				+ "style=\"display: block\"><input type=\"hidden\" id=\"variable\" name=\"variable\" value=\""
+				+ variable
+				+ "\"><fieldset class=\"scheduler-border\"><legend class=\""
 				+ "scheduler-border\">Time</legend><div class=\"col-md-6\"><div class=\"control-group\"><label class=\"control-label input-label\" "
 				+ "for=\"minTime\">Min :</label><div class=\"controls\"><select id=\"from\">";
 
